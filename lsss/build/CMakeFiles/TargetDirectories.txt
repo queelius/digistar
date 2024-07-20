@@ -1,0 +1,3 @@
+/home/spinoza/github/lsss/build/CMakeFiles/simulation.dir
+/home/spinoza/github/lsss/build/CMakeFiles/edit_cache.dir
+/home/spinoza/github/lsss/build/CMakeFiles/rebuild_cache.dir

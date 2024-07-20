@@ -1,0 +1,44 @@
+{
+  "parent": {
+      "name": "Neptune",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass": 1.02413e26,
+      "radius": 2.4622e7,
+      "color": [
+        0.0,
+        0.0,
+        0.8
+      ]
+    },
+    "children": [
+    {
+      "name": "Triton",
+      "position": [
+        3.547e8,
+        0.0,
+        0.0
+      ],
+      "velocity": [
+        0.0,
+        4.39e3,
+        0.0
+      ],
+      "mass": 2.14e22,
+      "radius": 1.3534e6,
+      "color": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    }
+  ]
+}

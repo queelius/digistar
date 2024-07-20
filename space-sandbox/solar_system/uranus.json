@@ -1,0 +1,124 @@
+{
+    "parent": {
+        "name": "Uranus",
+        "position": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "velocity": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "mass": 8.6810e25,
+        "radius": 2.5362e7,
+        "color": [
+            0.0,
+            0.8,
+            0.8
+        ]
+    },
+    "children": [
+        {
+            "name": "Miranda",
+            "position": [
+                2.7e8,
+                0.0,
+                0.0
+            ],
+            "velocity": [
+                0.0,
+                4.67e3,
+                0.0
+            ],
+            "mass": 6.59e19,
+            "radius": 2.4e5,
+            "color": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        {
+            "name": "Ariel",
+            "position": [
+                3.6e8,
+                0.0,
+                0.0
+            ],
+            "velocity": [
+                0.0,
+                3.39e3,
+                0.0
+            ],
+            "mass": 1.353e21,
+            "radius": 5.32e5,
+            "color": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        {
+            "name": "Umbriel",
+            "position": [
+                4.5e8,
+                0.0,
+                0.0
+            ],
+            "velocity": [
+                0.0,
+                3.09e3,
+                0.0
+            ],
+            "mass": 1.172e21,
+            "radius": 5.86e5,
+            "color": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        {
+            "name": "Titania",
+            "position": [
+                5.6e8,
+                0.0,
+                0.0
+            ],
+            "velocity": [
+                0.0,
+                2.59e3,
+                0.0
+            ],
+            "mass": 3.527e21,
+            "radius": 7.82e5,
+            "color": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        {
+            "name": "Oberon",
+            "position": [
+                7.1e8,
+                0.0,
+                0.0
+            ],
+            "velocity": [
+                0.0,
+                2.39e3,
+                0.0
+            ],
+            "mass": 3.014e21,
+            "radius": 7.61e5,
+            "color": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        }
+    ]
+}

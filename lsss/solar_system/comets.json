@@ -1,0 +1,64 @@
+{
+    "parent": {
+        "name": "Sun",
+        "position": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "velocity": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "mass": 1.989e30,
+        "radius": 6.9634e8,
+        "color": [
+            1.0,
+            1.0,
+            0.0
+        ]
+    },
+    "children": [
+        {
+            "name": "Comet 67P/Churyumov–Gerasimenko",
+            "position": [
+                5.0e11,
+                0.0,
+                0.0
+            ],
+            "velocity": [
+                0.0,
+                3.4e4,
+                0.0
+            ],
+            "mass": 1.0e13,
+            "radius": 2.5e3,
+            "color": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        {
+            "name": "Halley's Comet",
+            "position": [
+                8.783e12,
+                0.0,
+                0.0
+            ],
+            "velocity": [
+                0.0,
+                5.5e4,
+                0.0
+            ],
+            "mass": 2.2e14,
+            "radius": 5.0e3,
+            "color": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        }
+    ]
+}

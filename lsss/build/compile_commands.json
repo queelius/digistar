@@ -1,0 +1,17 @@
+[
+{
+  "directory": "/home/spinoza/github/lsss/build",
+  "command": "/usr/bin/nvcc -forward-unknown-to-host-compiler  -I/home/spinoza/github/lsss/include -g --generate-code=arch=compute_86,code=[compute_86,sm_86] -std=c++17 -x cu -dc /home/spinoza/github/lsss/src/simulation.cu -o CMakeFiles/simulation.dir/src/simulation.cu.o",
+  "file": "/home/spinoza/github/lsss/src/simulation.cu"
+},
+{
+  "directory": "/home/spinoza/github/lsss/build",
+  "command": "/usr/bin/c++  -I/home/spinoza/github/lsss/include -g -o CMakeFiles/simulation.dir/src/simulation_api.cpp.o -c /home/spinoza/github/lsss/src/simulation_api.cpp",
+  "file": "/home/spinoza/github/lsss/src/simulation_api.cpp"
+},
+{
+  "directory": "/home/spinoza/github/lsss/build",
+  "command": "/usr/bin/c++  -I/home/spinoza/github/lsss/include -g -o CMakeFiles/simulation.dir/main.cpp.o -c /home/spinoza/github/lsss/main.cpp",
+  "file": "/home/spinoza/github/lsss/main.cpp"
+}
+]

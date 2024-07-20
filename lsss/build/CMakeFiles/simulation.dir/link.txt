@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/simulation.dir/src/simulation.cu.o CMakeFiles/simulation.dir/src/simulation_api.cpp.o CMakeFiles/simulation.dir/main.cpp.o CMakeFiles/simulation.dir/cmake_device_link.o -o simulation   -L/usr/lib/x86_64-linux-gnu/stubs  -lcudart -lcudadevrt -lcudart_static -lrt -lpthread -ldl 
