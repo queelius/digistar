@@ -1,5 +1,7 @@
 # Composite Modeling in Large-Scale Space Simulation
 
+We present an approach to modeling composites in a large-scale space simulation, where Big Atoms are the fundamental entities. The system uses virtual springs to cluster Big Atoms into composites, disjoint sets to manage these clusters, and bounding volumes to approximate interactions between composites. We discuss the implementation of these concepts and how they enable dynamic formation and behavior of composites in the simulation.
+
 ## 1. Disjoint Sets and Virtual Springs
 
 ### Concept
@@ -50,9 +52,11 @@ void updateClusters(DisjointSet& ds, const std::vector<VirtualSpring>& springs) 
 ## 2. Clustering Big Atoms as Composites
 
 ### Process
-1. Maintain a list of virtual springs.
+1. Maintain a list of virtual springs. We call them virtual springs because they are not physical springs but rather represent the forces that hold Big Atoms together. They are dynamic and can be created or destroyed based on local interactions. We discuss the dynamics of these virtual springs in another section.
 2. Use DisjointSet to efficiently cluster connected Big Atoms.
 3. Treat each cluster as a composite for certain calculations.
+
+For presentation purposes, a client may decide to render composites differently depending on the characteristics of the spring connections and Big Atom properties. For example, a composite with strong spring connections may be rendered as a solid object, while a composite with weak spring connections may be rendered as a cloud of particles.
 
 ### Advantages
 - Allows for dynamic formation and breaking of composites.
