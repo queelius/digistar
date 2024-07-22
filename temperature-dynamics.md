@@ -1,6 +1,6 @@
 ### Design Document: Internal Temperature and Dynamic Interactions
 
-#### Section: Internal Temperature of Big Atoms and its Influence on Dynamics
+#### Internal Temperature of Big Atoms and its Influence on Dynamics
 
 This section details how the internal temperature of a big atom influences the dynamic interactions within the simulation. By modeling the Sun as a big atom, we demonstrate the computation of internal temperature, its impact on the potential energy field, and the resulting force field that affects the motion of other particles. This approach ensures realistic and engaging simulation dynamics.
 

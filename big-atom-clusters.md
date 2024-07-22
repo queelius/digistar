@@ -1,12 +1,22 @@
 # Composite Modeling in Large-Scale Space Simulation
 
-We present an approach to modeling composites in a large-scale space simulation, where Big Atoms are the fundamental entities. The system uses virtual springs to cluster Big Atoms into composites, disjoint sets to manage these clusters, and bounding volumes to approximate interactions between composites. We discuss the implementation of these concepts and how they enable dynamic formation and behavior of composites in the simulation.
+We present an approach to modeling composites in a large-scale space simulation, where Big Atoms are the fundamental entities.
 
-## 1. Disjoint Sets and Virtual Springs
+We use the Moore potential to model interactions between Big Atoms. When the attraction between Big Atoms
+is sufficiently large, the distance between them is less than a threshold, and their interaction vectors align,
+we automatically insert this information in a list of virtual connections. We also allow for the connections to
+be explicitly defined with (tensor) springs with dampening, which can be used to customize composite objects
+instead of relying on the Moore potential solely.
 
-### Concept
-- Use disjoint sets (union-find algorithm) to efficiently cluster Big Atoms connected by virtual springs.
-- Virtual springs are created and destroyed based on local interaction forces, simulating "big chemistry-like behavior".
+Based on the connectivity information, we cluster Big Atoms into composites using disjoint sets. These composites
+can be treated as single entities for certain calculations, such as bounding volume approximations for interactions
+between composites and big atoms and for visual representation (such as a convex hull or bounding sphere for rendering).
+
+## Disjoint Sets and Clustering
+
+When provided a list of links (whether virtually constructed and deconstructed from the Moore potential or explicitly defined as springs),
+we can use disjoint sets to efficiently cluster Big Atoms into clusters, which we call composites.
+The union-find algorithm allows for efficient clustering based on the connectivity information.
 
 ### Implementation
 
@@ -35,10 +45,12 @@ public:
     }
 };
 
-struct VirtualSpring {
+struct Spring {
     int atom1, atom2;
-    Tensor3x3 stiffnessTensor;
-    // Other properties...
+    Tensor3x3 stiffness;
+    float damping;
+    float equilibrium;
+    float breakingTension; // when F_spring > breakingTension, the spring breaks
 };
 
 // Function to update clusters based on virtual springs

@@ -8,87 +8,123 @@ In this section, we detail the fundamental properties of big atoms and their der
 
 Each big atom in the simulation possesses a set of fundamental properties that define its basic characteristics and behavior. These properties include both observable and internal attributes that influence the interactions and dynamics within the simulation.
 
-1. **Mass (\(m\))**
+1. **Mass ($m$)**
    - The amount of matter in the big atom.
    - Essential for calculating gravitational forces and inertia.
 
-2. **Radius (\(r\))**
+2. **Radius ($r$)**
    - The size of the big atom.
    - Important for collision detection, interaction ranges, and volume calculations.
 
-3. **Position (\(\vec{p}\))**
+3. **Position ($\vec{p}$)**
    - The spatial location of the big atom in the simulation.
    - Used for calculating distances and interactions with other big atoms.
 
-4. **Velocity (\(\vec{v}\))**
+4. **Velocity ($\vec{v}$)**
    - The rate of change of the big atom's position.
    - Necessary for dynamic simulations and predicting future positions.
 
-5. **Charge (\(q\))**
+5. **Charge ($q$)**
    - The electric charge of the big atom.
    - Influences electrostatic interactions and potential fields.
 
-6. **Interaction Vector (\(\vec{i}\))**
+6. **Interaction Vector ($\vec{i}$)**
    - A vector representing the interaction characteristics of the big atom.
    - Used to modulate interaction properties like bond strength and distance.
 
-7. **Rotational State (\(\vec{\omega}\))**
+7. **Rotational State ($\vec{\omega}$)**
    - The angular velocity of the big atom.
    - Determines the rotational energy and dynamics around its axis.
 
-8. **Internal Temperature (\(T_{\text{internal}}\))**
+8. **Internal Temperature ($T_{\text{internal}}$)**
    - Represents the internal kinetic energy or thermal state of the big atom.
    - Influences the repulsive potential energy field due to thermal effects.
 
-9. **Magnetic Moment (\(\vec{\mu}\))**
+9. **Magnetic Moment ($\vec{\mu}$)**
    - Represents the magnetic properties of the big atom.
    - Important for simulating magnetic interactions and fields.
 
-10. **Resource Content (\(\vec{R}\))**
+10. **Resource Content ($\vec{R}$)**
     - A vector representing quantities of various resources within the big atom.
     - Examples include metals, carbon, and silicon.
+
+
+##### C++ Data Structures
+
+### `BigAtom` Struct and SoA Conversion
+
+Your `BigAtom` struct:
+```cpp
+struct BigAtom {
+   float3 position;
+   float3 velocity;
+   float mass;
+   float charge;
+   float radius;
+   float temperature;
+   float3 omega;
+   float3 magneticMoment;
+   float3 interaction;
+   float3 resourceContent;
+
+   float3 force; // force accumulator, not a fundamental property
+};
+```
+
+Convert this to a Structure of Arrays (SoA) for better performance on the GPU:
+```cpp
+struct BigAtomSoA {
+   float3* positions;
+   float3* velocities;
+   float* masses;
+   float* charges;
+   float* radii;
+   float* temperatures;
+   float3* omegas;
+   float3* magneticMoments;
+   float3* interactions;
+   float3* resourceContents;
+   int numAtoms;
+
+   float3* forces; // force accumulators, not a fundamental property
+};
+```
 
 #### Relational Properties
 
 Relational properties are derived from the interactions and combinations of fundamental properties, particularly within clusters of big atoms. These properties are essential for understanding the dynamic and interactive behavior of big atoms in the simulation.
 
-1. **Density (\(\rho\))**
-   - Calculated as:
-     \[
-     \rho = \frac{m}{\frac{4}{3} \pi r^3}
-     \]
+**Density ($\rho$)** is derived from mass and radius:
+$$
+\rho = \frac{m}{\frac{4}{3} \pi r^3}
+$$
 
-2. **Rotational Energy (\(E_{\text{rot}}\))**
-   - Calculated as:
-     \[
-     E_{\text{rot}} = \frac{1}{5} m r^2 \omega^2
-     \]
+**Rotational Energy ($E_{\text{rot}}$)** is calculated based on mass, radius, and angular velocity:
+$$
+E_{\text{rot}} = \frac{1}{5} m r^2 \omega^2,
+$$
 
-3. **Internal Kinetic Energy (\(E_{\text{internal}}\))**
-   - Calculated as:
-     \[
-     E_{\text{internal}} = k_B T_{\text{internal}}
-     \]
-   - Where \(k_B\) is a proportionality constant related to thermal energy.
+**Internal Kinetic Energy ($E_{\text{internal}}$)** is related to internal temperature:
+$$
+E_{\text{internal}} = k_B T_{\text{internal}},
+$$
+where $k_B$ is a proportionality constant related to thermal energy.
 
-4. **Equilibrium Bond Distance (\(r_e\))**
-   - Modulated by the interaction vectors and fundamental properties:
-     \[
-     r_e = (r_1 + r_2) \cdot (1 + \text{cosine\_similarity}(\vec{i_1}, \vec{i_2}) \cdot k_r)
-     \]
-   - Where \(k_r\) is a scaling factor.
+**Equilibrium Bond Distance ($r_e$)** is based on the radii of the interacting big atoms and modulated by the interaction vectors and fundamental properties:
+$$
+r_e = (r_1 + r_2) \cdot (1 + \text{cosine\_similarity}(\vec{i_1}, \vec{i_2}) \cdot k_r),
+$$
+where $k_r$ is a scaling factor.
 
-5. **Depth of the Potential Well (\(D_e\))**
-   - A constant base value adjusted by interaction vectors:
-     \[
-     D_e = D_{e,\text{base}} \cdot (1 + \text{cosine\_similarity}(\vec{i_1}, \vec{i_2}) \cdot k_D)
-     \]
+**Depth of the Potential Well ($D_e$)** is a base value adjusted by interaction vectors:
+$$
+D_e = D_{e,\text{base}} \cdot (1 + \text{cosine\_similarity}(\vec{i_1}, \vec{i_2}) \cdot k_D)
+$$
 
-6. **Width of the Potential Well (\(a\))**
-   - A constant base value adjusted by interaction vectors:
-     \[
-     a = a_{\text{base}} \cdot (1 + \text{cosine\_similarity}(\vec{i_1}, \vec{i_2}) \cdot k_a)
-     \]
+**Width of the Potential Well ($a$)** is a base value adjusted by interaction vectors:
+$$
+a = a_{\text{base}} \cdot (1 + \text{cosine\_similarity}(\vec{i_1}, \vec{i_2}) \cdot k_a)
+$$
 
 #### Cluster Properties
 
@@ -100,10 +136,10 @@ When big atoms form clusters based on their interactions (e.g., via the Morse po
 
 2. **Cluster Temperature**
    - Internal kinetic energy of the cluster:
-     \[
+     $$
      T_{\text{cluster}} = \sum ||(\vec{v_i} - \vec{v_{\text{cluster}}})||^2
-     \]
-   - Where \(\vec{v_{\text{cluster}}}\) is the average velocity of the cluster.
+     $$
+   - Where $\vec{v_{\text{cluster}}}$ is the average velocity of the cluster.
 
 3. **Cluster Mass and Velocity**
    - Total mass and center-of-mass velocity of the cluster.

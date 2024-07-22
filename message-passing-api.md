@@ -75,3 +75,197 @@ additional information about the objects.
 
 
 
+
+
+
+
+### Message Passing Interface
+
+#### UUID for Big Atoms
+
+To uniquely identify each big atom and facilitate client-server interactions, we will use UUIDs (Universally Unique Identifiers). This approach allows clients to track identities and manage state efficiently.
+
+#### Message Types and Structures
+
+#### Apply Force
+
+```cpp
+struct ApplyForceMessage {
+    MessageType type;
+    UUID uuid;
+    float3 force;
+};
+```
+
+#### Get Big Atom
+
+```cpp
+struct GetBigAtomMessage {
+    MessageType type;
+    UUID uuid;
+};
+```
+
+#### Make Big Atom
+
+```cpp
+struct MakeBigAtomMessage {
+    MessageType type;
+    BigAtom newAtom; // or a structure containing initialization parameters
+};
+```
+
+#### Get Bounding Box
+
+```cpp
+struct GetBoundingBoxMessage {
+    MessageType type;
+    BoundingBox box;
+};
+```
+
+#### Bounding Box Query
+
+```cpp
+struct BoundingBoxQueryMessage {
+    MessageType type;
+    BoundingBox box;
+};
+```
+
+#### Mutation Request
+
+```cpp
+struct MutationRequestMessage {
+    MessageType type;
+    UUID uuid;
+    float3 force;
+};
+```
+
+### ZeroMQ Setup and Handling
+
+#### Server-Side Implementation
+
+```cpp
+void setupZeroMQ() {
+    zmq::context_t context(1);
+    zmq::socket_t socket(context, ZMQ_REP);
+    socket.bind("tcp://*:5555");
+
+    while (true) {
+        zmq::message_t request;
+        socket.recv(&request);
+
+        MessageType msgType = *(MessageType*)request.data();
+
+        switch (msgType) {
+            case APPLY_FORCE: {
+                ApplyForceMessage* msg = (ApplyForceMessage*)request.data();
+                applyForce(msg->uuid, msg->force);
+                break;
+            }
+            case GET_BIG_ATOM: {
+                GetBigAtomMessage* msg = (GetBigAtomMessage*)request.data();
+                BigAtom atom = getBigAtom(msg->uuid);
+                zmq::message_t reply(sizeof(BigAtom));
+                memcpy(reply.data(), &atom, sizeof(BigAtom));
+                socket.send(reply);
+                break;
+            }
+            case MAKE_BIG_ATOM: {
+                MakeBigAtomMessage* msg = (MakeBigAtomMessage*)request.data();
+                UUID newUuid = makeBigAtom(msg->newAtom);
+                zmq::message_t reply(sizeof(UUID));
+                memcpy(reply.data(), &newUuid, sizeof(UUID));
+                socket.send(reply);
+                break;
+            }
+            case GET_BOUNDING_BOX: {
+                GetBoundingBoxMessage* msg = (GetBoundingBoxMessage*)request.data();
+                std::vector<BigAtom> atoms = getBoundingBox(msg->box);
+                zmq::message_t reply(atoms.size() * sizeof(BigAtom));
+                memcpy(reply.data(), atoms.data(), atoms.size() * sizeof(BigAtom));
+                socket.send(reply);
+                break;
+            }
+            case BOUNDING_BOX_QUERY: {
+                BoundingBoxQueryMessage* msg = (BoundingBoxQueryMessage*)request.data();
+                std::vector<BigAtom> atoms = queryBoundingBox(msg->box);
+                zmq::message_t reply(atoms.size() * sizeof(BigAtom));
+                memcpy(reply.data(), atoms.data(), atoms.size() * sizeof(BigAtom));
+                socket.send(reply);
+                break;
+            }
+            case MUTATION_REQUEST: {
+                MutationRequestMessage* msg = (MutationRequestMessage*)request.data();
+                mutateBigAtom(msg->uuid, msg->force);
+                break;
+            }
+            default:
+                // Handle unknown message type
+                break;
+        }
+    }
+}
+```
+
+#### Client-Side Implementation
+
+```cpp
+void sendApplyForce(zmq::socket_t& socket, UUID uuid, float3 force) {
+    ApplyForceMessage msg;
+    msg.type = APPLY_FORCE;
+    msg.uuid = uuid;
+    msg.force = force;
+    zmq::message_t request(sizeof(ApplyForceMessage));
+    memcpy(request.data(), &msg, sizeof(ApplyForceMessage));
+    socket.send(request);
+}
+
+BigAtom sendGetBigAtom(zmq::socket_t& socket, UUID uuid) {
+    GetBigAtomMessage msg;
+    msg.type = GET_BIG_ATOM;
+    msg.uuid = uuid;
+    zmq::message_t request(sizeof(GetBigAtomMessage));
+    memcpy(request.data(), &msg, sizeof(GetBigAtomMessage));
+    socket.send(request);
+
+    zmq::message_t reply;
+    socket.recv(&reply);
+    BigAtom atom = *(BigAtom*)reply.data();
+    return atom;
+}
+
+UUID sendMakeBigAtom(zmq::socket_t& socket, BigAtom newAtom) {
+    MakeBigAtomMessage msg;
+    msg.type = MAKE_BIG_ATOM;
+    msg.newAtom = newAtom;
+    zmq::message_t request(sizeof(MakeBigAtomMessage));
+    memcpy(request.data(), &msg, sizeof(MakeBigAtomMessage));
+    socket.send(request);
+
+    zmq::message_t reply;
+    socket.recv(&reply);
+    UUID newUuid = *(UUID*)reply.data();
+    return newUuid;
+}
+
+std::vector<BigAtom> sendGetBoundingBox(zmq::socket_t& socket, BoundingBox box) {
+    GetBoundingBoxMessage msg;
+    msg.type = GET_BOUNDING_BOX;
+    msg.box = box;
+    zmq::message_t request(sizeof(GetBoundingBoxMessage));
+    memcpy(request.data(), &msg, sizeof(GetBoundingBoxMessage));
+    socket.send(request);
+
+    zmq::message_t reply;
+    socket.recv(&reply);
+    int numAtoms = reply.size() / sizeof(BigAtom);
+    std::vector<BigAtom> atoms(numAtoms);
+    memcpy(atoms.data(), reply.data(), reply.size());
+    return atoms;
+}
+```
+
+
