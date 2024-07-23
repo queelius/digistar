@@ -7,23 +7,23 @@ In our simulation, we employ a toroidal space topology, where the simulation spa
 The toroidal topology is advantageous for simulations with many interacting particles, such as our n-body simulation with big atoms and various forces. It eliminates edge effects and ensures all particles remain within the simulation space, reducing computational overhead and simplifying boundary management.
 
 #### Modifying Distance Calculations
-In a toroidal space, distances between points are calculated considering the wrap-around. For points \(A(x_1, y_1, z_1)\) and \(B(x_2, y_2, z_2)\) in a 3D toroidal space with dimensions \(L_x, L_y, L_z\):
+In a toroidal space, distances between points are calculated considering the wrap-around. For points $A(x_1, y_1, z_1)$ and $B(x_2, y_2, z_2)$ in a 3D toroidal space with dimensions $L_x, L_y, L_z$:
 
-\[
+$$
 \Delta x = \min(|x_2 - x_1|, L_x - |x_2 - x_1|)
-\]
-\[
+$$
+$$
 \Delta y = \min(|y_2 - y_1|, L_y - |y_2 - y_1|)
-\]
-\[
+$$
+$$
 \Delta z = \min(|z_2 - z_1|, L_z - |z_2 - z_1|)
-\]
+$$
 
-The distance \(d\) is given by:
+The distance $d$ is given by:
 
-\[
+$$
 d = \sqrt{\Delta x^2 + \Delta y^2 + \Delta z^2}
-\]
+$$
 
 This ensures the shortest path through the toroidal space is always considered.
 

@@ -6,7 +6,7 @@ def generate_makefile(index_file, makefile_output):
 
     # Extract the list of markdown files from the index.md
     markdown_files = re.findall(r'\(([\w\-_]+\.md)\)', content)
-    
+
     # Ensure the extracted list is not empty
     if not markdown_files:
         raise ValueError("No markdown files found in the index.md file")
@@ -18,16 +18,25 @@ def generate_makefile(index_file, makefile_output):
     makefile_content += " \\\n    ".join(markdown_files) + "\n\n"
 
     makefile_content += """\
-# Output file
-OUTPUT_FILE = design_document.md
+# Output files
+OUTPUT_MD = design_document.md
+OUTPUT_PDF = design_document.pdf
+
+# Default target
+all: $(OUTPUT_MD)
 
 # Concatenate markdown files
-$(OUTPUT_FILE): $(MARKDOWN_FILES)
-\tcat $(MARKDOWN_FILES) > $(OUTPUT_FILE)
+$(OUTPUT_MD): $(MARKDOWN_FILES)
+    cat $(MARKDOWN_FILES) > $(OUTPUT_MD)
 
+# Generate PDF from markdown
+$(OUTPUT_PDF): $(OUTPUT_MD)
+    pandoc $(OUTPUT_MD) -o $(OUTPUT_PDF)
+
+# Clean up generated files
 .PHONY: clean
 clean:
-\trm -f $(OUTPUT_FILE)
+    rm -f $(OUTPUT_MD) $(OUTPUT_PDF)
 """
 
     # Write the Makefile content to the output file

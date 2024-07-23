@@ -8,46 +8,46 @@ This section details how the internal temperature of a big atom influences the d
 
 The internal temperature of a big atom represents the kinetic energy of its internal components. This internal energy influences the potential energy field around the big atom, affecting nearby particles.
 
-1. **Internal Kinetic Energy (\(E_{\text{internal}}\))**:
-   \[
+1. **Internal Kinetic Energy ($E_{\text{internal}}$)**:
+   $$
    E_{\text{internal}} = k_B T_{\text{internal}}
-   \]
-   where \(k_B\) is Boltzmann's constant and \(T_{\text{internal}}\) is the internal temperature of the big atom.
+   $$
+   where $k_B$ is Boltzmann's constant and $T_{\text{internal}}$ is the internal temperature of the big atom.
 
 #### Potential Energy Function
 
-The internal temperature induces a potential energy field around the big atom. The potential energy (\(U_T\)) is given by:
-\[
+The internal temperature induces a potential energy field around the big atom. The potential energy ($U_T$) is given by:
+$$
 U_T = k_T T_{\text{internal}}
-\]
-where \(k_T\) is a scaling factor that determines the strength of the potential field.
+$$
+where $k_T$ is a scaling factor that determines the strength of the potential field.
 
 #### Force Field
 
-The force field (\(\vec{F}\)) is derived from the negative gradient of the potential energy:
-\[
+The force field ($\vec{F}$) is derived from the negative gradient of the potential energy:
+$$
 \vec{F} = -\nabla U_T
-\]
-Assuming \(U_T\) depends on the distance \(r\) from the center of the big atom, we get:
-\[
+$$
+Assuming $U_T$ depends on the distance $r$ from the center of the big atom, we get:
+$$
 U_T(r) = \frac{k_T T_{\text{internal}}}{r}
-\]
+$$
 The force is then:
-\[
+$$
 \vec{F} = -\frac{dU_T}{dr} \hat{r} = -\frac{d}{dr} \left( \frac{k_T T_{\text{internal}}}{r} \right) \hat{r} = k_T T_{\text{internal}} \frac{1}{r^2} \hat{r}
-\]
+$$
 
 #### Example: Modeling the Sun as a Big Atom
 
 To illustrate the impact of internal temperature on dynamics, we model the Sun as a big atom. We compute the internal temperature, derive the potential energy function, compute the force field, and update the positions and velocities of nearby particles.
 
 1. **Given Parameters**:
-   - Mass of the particle (\(m\)) = 1 kg
-   - Initial position of the particle (\(\vec{p}\)) = (1 AU, 0, 0) where 1 AU = \(1.496 \times 10^{11}\) meters
-   - Initial velocity of the particle (\(\vec{v}\)) = (0, 0, 0)
-   - Internal temperature of the Sun (\(T_{\text{internal}}\)) = \(1.57 \times 10^7\) K
-   - Scaling factor for the potential energy (\(k_T\)) = \(1 \times 10^{-23}\) J/K
-   - Time step (\(\Delta t\)) = 1 second
+   - Mass of the particle ($m$) = 1 kg
+   - Initial position of the particle ($\vec{p}$) = (1 AU, 0, 0) where 1 AU = $1.496 \times 10^{11}$ meters
+   - Initial velocity of the particle ($\vec{v}$) = (0, 0, 0)
+   - Internal temperature of the Sun ($T_{\text{internal}}$) = $1.57 \times 10^7$ K
+   - Scaling factor for the potential energy ($k_T$) = $1 \times 10^{-23}$ J/K
+   - Time step ($\Delta t$) = 1 second
 
 2. **Computations**:
    - Compute the force on the particle due to the Sun's internal temperature.

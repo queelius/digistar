@@ -218,46 +218,46 @@ This section details how the internal temperature of a big atom influences the d
 
 The internal temperature of a big atom represents the kinetic energy of its internal components. This internal energy influences the potential energy field around the big atom, affecting nearby particles.
 
-1. **Internal Kinetic Energy (\(E_{\text{internal}}\))**:
-   \[
+1. **Internal Kinetic Energy ($E_{\text{internal}}$)**:
+   $$
    E_{\text{internal}} = k_B T_{\text{internal}}
-   \]
-   where \(k_B\) is Boltzmann's constant and \(T_{\text{internal}}\) is the internal temperature of the big atom.
+   $$
+   where $k_B$ is Boltzmann's constant and $T_{\text{internal}}$ is the internal temperature of the big atom.
 
 #### Potential Energy Function
 
-The internal temperature induces a potential energy field around the big atom. The potential energy (\(U_T\)) is given by:
-\[
+The internal temperature induces a potential energy field around the big atom. The potential energy ($U_T$) is given by:
+$$
 U_T = k_T T_{\text{internal}}
-\]
-where \(k_T\) is a scaling factor that determines the strength of the potential field.
+$$
+where $k_T$ is a scaling factor that determines the strength of the potential field.
 
 #### Force Field
 
-The force field (\(\vec{F}\)) is derived from the negative gradient of the potential energy:
-\[
+The force field ($\vec{F}$) is derived from the negative gradient of the potential energy:
+$$
 \vec{F} = -\nabla U_T
-\]
-Assuming \(U_T\) depends on the distance \(r\) from the center of the big atom, we get:
-\[
+$$
+Assuming $U_T$ depends on the distance $r$ from the center of the big atom, we get:
+$$
 U_T(r) = \frac{k_T T_{\text{internal}}}{r}
-\]
+$$
 The force is then:
-\[
+$$
 \vec{F} = -\frac{dU_T}{dr} \hat{r} = -\frac{d}{dr} \left( \frac{k_T T_{\text{internal}}}{r} \right) \hat{r} = k_T T_{\text{internal}} \frac{1}{r^2} \hat{r}
-\]
+$$
 
 #### Example: Modeling the Sun as a Big Atom
 
 To illustrate the impact of internal temperature on dynamics, we model the Sun as a big atom. We compute the internal temperature, derive the potential energy function, compute the force field, and update the positions and velocities of nearby particles.
 
 1. **Given Parameters**:
-   - Mass of the particle (\(m\)) = 1 kg
-   - Initial position of the particle (\(\vec{p}\)) = (1 AU, 0, 0) where 1 AU = \(1.496 \times 10^{11}\) meters
-   - Initial velocity of the particle (\(\vec{v}\)) = (0, 0, 0)
-   - Internal temperature of the Sun (\(T_{\text{internal}}\)) = \(1.57 \times 10^7\) K
-   - Scaling factor for the potential energy (\(k_T\)) = \(1 \times 10^{-23}\) J/K
-   - Time step (\(\Delta t\)) = 1 second
+   - Mass of the particle ($m$) = 1 kg
+   - Initial position of the particle ($\vec{p}$) = (1 AU, 0, 0) where 1 AU = $1.496 \times 10^{11}$ meters
+   - Initial velocity of the particle ($\vec{v}$) = (0, 0, 0)
+   - Internal temperature of the Sun ($T_{\text{internal}}$) = $1.57 \times 10^7$ K
+   - Scaling factor for the potential energy ($k_T$) = $1 \times 10^{-23}$ J/K
+   - Time step ($\Delta t$) = 1 second
 
 2. **Computations**:
    - Compute the force on the particle due to the Sun's internal temperature.
@@ -336,17 +336,15 @@ E = \gamma m c^2 + k_B T_{\text{internal}} + \frac{1}{2} I \omega^2,
 $$
 where
 
-$$
 \begin{align*}
-\gamma = \frac{1}{\sqrt{1 - \frac{v^2}{c^2}}} &\text{ is the Lorentz factor},\\
-m & \text{ is the mass of the big atom},\\
-c & \text{ is the speed limit of the simulation},\\
-k_B & \text{ is Boltzmann's constant},\\
-T_{\text{internal}} & \text{ is the internal temperature of the big atom},\\
-I & \text{ is the moment of inertia of the big atom, and}\\
-\omega & \text{ is the angular velocity of the big atom}.
+\gamma = \frac{1}{\sqrt{1 - \frac{v^2}{c^2}}}	&\text{ is the Lorentz factor},\\
+m						&\text{ is the mass of the big atom},\\
+c						&\text{ is the speed limit of the simulation},\\
+k_B						&\text{ is Boltzmann's constant},\\
+T_{\text{internal}}				&\text{ is the internal temperature of the big atom},\\
+I						&\text{ is the moment of inertia of the big atom},\\
+\omega						&\text{ is the angular velocity of the big atom}.
 \end{align*}
-$$
 
 We may simplify this to something else in the future, but for now, the probabilities of a
 fission event are based on this total internal energy. In particular, a fission event represents
@@ -418,98 +416,98 @@ are based on
 
 1. **Mass and Density**:
    - When two big atoms merge, the resulting big atom should have the same density as the original big atoms.
-   - For two atoms with masses \(m_1\) and \(m_2\), and radii \(R_1\) and \(R_2\):
-     \[
+   - For two atoms with masses $m_1$ and $m_2$, and radii $R_1$ and $R_2$:
+     $$
      \rho = \frac{m_1}{\frac{4}{3} \pi R_1^3} = \frac{m_2}{\frac{4}{3} \pi R_2^3}
-     \]
-   - The resulting big atom with mass \(m = m_1 + m_2 - E_{\text{lost}}\) has radius:
-     \[
+     $$
+   - The resulting big atom with mass $m = m_1 + m_2 - E_{\text{lost}}$ has radius:
+     $$
      R = \left( \frac{3 (m_1 + m_2 - E_{\text{lost}})}{4 \pi \rho} \right)^{1/3}
-     \]
+     $$
 
 2. **Velocity**:
    - The resulting big atom's velocity should conserve momentum:
-     \[
+     $$
      \mathbf{v} = \frac{m_1 \mathbf{v}_1 + m_2 \mathbf{v}_2}{m_1 + m_2}
-     \]
+     $$
 
 3. **Energy**:
    - The energy lost during fusion is added to the EDP, accounting for the repulsive energy that is no longer present:
-     \[
+     $$
      E_{\text{lost}} = \frac{\gamma}{2} \left( R_1 + R_2 - \delta \right)^2
-     \]
+     $$
 
 ##### Fusion Event Details
 
 1. **Initial Setup**:
-   - Two big atoms with masses \(m_1\) and \(m_2\) and velocities \(\mathbf{v}_1\) and \(\mathbf{v}_2\) merge.
-   - The resulting big atom has mass \(m = m_1 + m_2 - E_{\text{lost}}\).
+   - Two big atoms with masses $m_1$ and $m_2$ and velocities $\mathbf{v}_1$ and $\mathbf{v}_2$ merge.
+   - The resulting big atom has mass $m = m_1 + m_2 - E_{\text{lost}}$.
 
 2. **Remove Repulsion Force**:
    - Since the two atoms merge into one, the repulsion force between them is removed.
 
 3. **Update EDP**:
    - Add the lost energy to the EDP:
-     \[
+     $$
      \text{EDP} = \text{EDP} + E_{\text{lost}}
-     \]
+     $$
 
 ### Detailed Equations
 
 #### Fission Event
 
 1. **Density and Radius Calculation**:
-   \[
+   $$
    \rho = \frac{m}{\frac{4}{3} \pi R^3}
-   \]
-   \[
+   $$
+   $$
    R_1 = \left( \frac{3 m_1}{4 \pi \rho} \right)^{1/3} \quad \text{and} \quad R_2 = \left( \frac{3 m_2}{4 \pi \rho} \right)^{1/3}
-   \]
+   $$
 
 2. **Velocity**:
-   \[
+   $$
    \mathbf{v}_1 = \mathbf{v}_2 = \mathbf{v}_{\text{original}}
-   \]
+   $$
 
 3. **Energy Lost**:
-   \[
+   $$
    E_{\text{lost}} = \frac{\gamma}{2} \left( R_1 + R_2 - \delta \right)^2
-   \]
+   $$
 
 4. **Update EDP**:
-   \[
+   $$
    \text{EDP} = \text{EDP} + E_{\text{lost}}
-   \]
+   $$
 
 5. **Repulsion Force**:
-   \[
+   $$
    \mathbf{F}_{\text{repulsion}} = -\gamma \frac{(R_1 + R_2 - \delta)}{\delta^3} (\mathbf{X}_1 - \mathbf{X}_2)
-   \]
+   $$
 
 #### Fusion Event
 
 1. **Density and Radius Calculation**:
-   \[
+   $$
    \rho = \frac{m_1}{\frac{4}{3} \pi R_1^3} = \frac{m_2}{\frac{4}{3} \pi R_2^3}
-   \]
-   \[
+   $$
+   $$
    R = \left( \frac{3 (m_1 + m_2 - E_{\text{lost}})}{4 \pi \rho} \right)^{1/3}
-   \]
+   $$
 
 2. **Velocity**:
-   \[
+   $$
    \mathbf{v} = \frac{m_1 \mathbf{v}_1 + m_2 \mathbf{v}_2}{m_1 + m_2}
-   \]
+   $$
 
 3. **Energy Lost**:
-   \[
+   $$
    E_{\text{lost}} = \frac{\gamma}{2} \left( R_1 + R_2 - \delta \right)^2
-   \]
+   $$
 
 4. **Update EDP**:
-   \[
+   $$
    \text{EDP} = \text{EDP} + E_{\text{lost}}
-   \]
+   $$
 
 ### Summary
 
@@ -536,7 +534,7 @@ Big Atoms is given by:
 $$
 U(\vec{r}) = -\frac{G m_1 m_2}{|r|}
 $$
-    
+
 where:
 - $G$ is the gravitational constant,
 - $m_1$ and $m_2$ are the masses of the two Big Atoms, and
@@ -961,7 +959,7 @@ For presentation purposes, a client may decide to render composites differently 
 
 ### Advantages
 - Allows for dynamic formation and breaking of composites.
-- Efficient O(α(n)) time complexity for union and find operations.
+- Efficient $O(\alpha(n))$ time complexity for union and find operations.
 
 ## 3. Bounding Volumes for Composites
 
@@ -1061,7 +1059,7 @@ Tensor3x3 calculateMomentOfInertia(const std::vector<BigAtom>& atoms, float3 com
 }
 
 float3 calculateAngularVelocity(float3 L, Tensor3x3 I) {
-    // Solve I * ω = L for ω
+    // Solve I * \omega = L for \omega
     // This is a simplification; in practice, you'd need to invert I
     return L / (I.xx + I.yy + I.zz);
 }
@@ -1119,23 +1117,23 @@ In our simulation, we employ a toroidal space topology, where the simulation spa
 The toroidal topology is advantageous for simulations with many interacting particles, such as our n-body simulation with big atoms and various forces. It eliminates edge effects and ensures all particles remain within the simulation space, reducing computational overhead and simplifying boundary management.
 
 #### Modifying Distance Calculations
-In a toroidal space, distances between points are calculated considering the wrap-around. For points \(A(x_1, y_1, z_1)\) and \(B(x_2, y_2, z_2)\) in a 3D toroidal space with dimensions \(L_x, L_y, L_z\):
+In a toroidal space, distances between points are calculated considering the wrap-around. For points $A(x_1, y_1, z_1)$ and $B(x_2, y_2, z_2)$ in a 3D toroidal space with dimensions $L_x, L_y, L_z$:
 
-\[
+$$
 \Delta x = \min(|x_2 - x_1|, L_x - |x_2 - x_1|)
-\]
-\[
+$$
+$$
 \Delta y = \min(|y_2 - y_1|, L_y - |y_2 - y_1|)
-\]
-\[
+$$
+$$
 \Delta z = \min(|z_2 - z_1|, L_z - |z_2 - z_1|)
-\]
+$$
 
-The distance \(d\) is given by:
+The distance $d$ is given by:
 
-\[
+$$
 d = \sqrt{\Delta x^2 + \Delta y^2 + \Delta z^2}
-\]
+$$
 
 This ensures the shortest path through the toroidal space is always considered.
 
@@ -1786,7 +1784,7 @@ std::vector<BigAtom> sendGetBoundingBox(zmq::socket_t& socket, BoundingBox box) 
 To manage large-scale simulations, we distribute the computational load across multiple servers. Each server manages a distinct region of the toroidal space, and these regions communicate to ensure seamless simulation across boundaries.
 
 #### Structure of the Network
-We organize the servers in an \(M \times N \times O\) grid reflecting the toroidal structure. For illustration, consider a 3x3x2 grid:
+We organize the servers in an $M \times N \times O$ grid reflecting the toroidal structure. For illustration, consider a 3x3x2 grid:
 
 **Bottom Layer:**
 
@@ -1834,25 +1832,25 @@ Below is a diagram illustrating the connectivity in a 3x3x2 grid of servers with
 **Bottom Layer:**
 
 ```
-   |        |        |
+  |     |     |
 - 01 -- 02 -- 03 -
-   |        |        |
+  |     |     |
 - 04 -- 05 -- 06 -
-   |        |        |
+  |     |     |
 - 07 -- 08 -- 09 -
-   |        |        |
+  |     |     |
 ```
 
 **Top Layer:**
 
 ```
-   |        |        |
+  |     |     |
 - 10 -- 11 -- 12 -
-   |        |        |
+  |     |     |
 - 13 -- 14 -- 15 -
-   |        |        |
+  |     |     |
 - 16 -- 17 -- 18 -
-   |        |        |
+  |     |     |
 ```
 
 Arrows indicate the wrap-around connections. For example, moving left from server 03 wraps around to the right side of server 01, and moving up from server 02 wraps around to the bottom of server 05.

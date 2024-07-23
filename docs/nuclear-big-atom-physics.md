@@ -18,17 +18,15 @@ E = \gamma m c^2 + k_B T_{\text{internal}} + \frac{1}{2} I \omega^2,
 $$
 where
 
-$$
 \begin{align*}
-\gamma = \frac{1}{\sqrt{1 - \frac{v^2}{c^2}}} &\text{ is the Lorentz factor},\\
-m & \text{ is the mass of the big atom},\\
-c & \text{ is the speed limit of the simulation},\\
-k_B & \text{ is Boltzmann's constant},\\
-T_{\text{internal}} & \text{ is the internal temperature of the big atom},\\
-I & \text{ is the moment of inertia of the big atom, and}\\
-\omega & \text{ is the angular velocity of the big atom}.
+\gamma = \frac{1}{\sqrt{1 - \frac{v^2}{c^2}}}	&\text{ is the Lorentz factor},\\
+m						&\text{ is the mass of the big atom},\\
+c						&\text{ is the speed limit of the simulation},\\
+k_B						&\text{ is Boltzmann's constant},\\
+T_{\text{internal}}				&\text{ is the internal temperature of the big atom},\\
+I						&\text{ is the moment of inertia of the big atom},\\
+\omega						&\text{ is the angular velocity of the big atom}.
 \end{align*}
-$$
 
 We may simplify this to something else in the future, but for now, the probabilities of a
 fission event are based on this total internal energy. In particular, a fission event represents
@@ -100,98 +98,98 @@ are based on
 
 1. **Mass and Density**:
    - When two big atoms merge, the resulting big atom should have the same density as the original big atoms.
-   - For two atoms with masses \(m_1\) and \(m_2\), and radii \(R_1\) and \(R_2\):
-     \[
+   - For two atoms with masses $m_1$ and $m_2$, and radii $R_1$ and $R_2$:
+     $$
      \rho = \frac{m_1}{\frac{4}{3} \pi R_1^3} = \frac{m_2}{\frac{4}{3} \pi R_2^3}
-     \]
-   - The resulting big atom with mass \(m = m_1 + m_2 - E_{\text{lost}}\) has radius:
-     \[
+     $$
+   - The resulting big atom with mass $m = m_1 + m_2 - E_{\text{lost}}$ has radius:
+     $$
      R = \left( \frac{3 (m_1 + m_2 - E_{\text{lost}})}{4 \pi \rho} \right)^{1/3}
-     \]
+     $$
 
 2. **Velocity**:
    - The resulting big atom's velocity should conserve momentum:
-     \[
+     $$
      \mathbf{v} = \frac{m_1 \mathbf{v}_1 + m_2 \mathbf{v}_2}{m_1 + m_2}
-     \]
+     $$
 
 3. **Energy**:
    - The energy lost during fusion is added to the EDP, accounting for the repulsive energy that is no longer present:
-     \[
+     $$
      E_{\text{lost}} = \frac{\gamma}{2} \left( R_1 + R_2 - \delta \right)^2
-     \]
+     $$
 
 ##### Fusion Event Details
 
 1. **Initial Setup**:
-   - Two big atoms with masses \(m_1\) and \(m_2\) and velocities \(\mathbf{v}_1\) and \(\mathbf{v}_2\) merge.
-   - The resulting big atom has mass \(m = m_1 + m_2 - E_{\text{lost}}\).
+   - Two big atoms with masses $m_1$ and $m_2$ and velocities $\mathbf{v}_1$ and $\mathbf{v}_2$ merge.
+   - The resulting big atom has mass $m = m_1 + m_2 - E_{\text{lost}}$.
 
 2. **Remove Repulsion Force**:
    - Since the two atoms merge into one, the repulsion force between them is removed.
 
 3. **Update EDP**:
    - Add the lost energy to the EDP:
-     \[
+     $$
      \text{EDP} = \text{EDP} + E_{\text{lost}}
-     \]
+     $$
 
 ### Detailed Equations
 
 #### Fission Event
 
 1. **Density and Radius Calculation**:
-   \[
+   $$
    \rho = \frac{m}{\frac{4}{3} \pi R^3}
-   \]
-   \[
+   $$
+   $$
    R_1 = \left( \frac{3 m_1}{4 \pi \rho} \right)^{1/3} \quad \text{and} \quad R_2 = \left( \frac{3 m_2}{4 \pi \rho} \right)^{1/3}
-   \]
+   $$
 
 2. **Velocity**:
-   \[
+   $$
    \mathbf{v}_1 = \mathbf{v}_2 = \mathbf{v}_{\text{original}}
-   \]
+   $$
 
 3. **Energy Lost**:
-   \[
+   $$
    E_{\text{lost}} = \frac{\gamma}{2} \left( R_1 + R_2 - \delta \right)^2
-   \]
+   $$
 
 4. **Update EDP**:
-   \[
+   $$
    \text{EDP} = \text{EDP} + E_{\text{lost}}
-   \]
+   $$
 
 5. **Repulsion Force**:
-   \[
+   $$
    \mathbf{F}_{\text{repulsion}} = -\gamma \frac{(R_1 + R_2 - \delta)}{\delta^3} (\mathbf{X}_1 - \mathbf{X}_2)
-   \]
+   $$
 
 #### Fusion Event
 
 1. **Density and Radius Calculation**:
-   \[
+   $$
    \rho = \frac{m_1}{\frac{4}{3} \pi R_1^3} = \frac{m_2}{\frac{4}{3} \pi R_2^3}
-   \]
-   \[
+   $$
+   $$
    R = \left( \frac{3 (m_1 + m_2 - E_{\text{lost}})}{4 \pi \rho} \right)^{1/3}
-   \]
+   $$
 
 2. **Velocity**:
-   \[
+   $$
    \mathbf{v} = \frac{m_1 \mathbf{v}_1 + m_2 \mathbf{v}_2}{m_1 + m_2}
-   \]
+   $$
 
 3. **Energy Lost**:
-   \[
+   $$
    E_{\text{lost}} = \frac{\gamma}{2} \left( R_1 + R_2 - \delta \right)^2
-   \]
+   $$
 
 4. **Update EDP**:
-   \[
+   $$
    \text{EDP} = \text{EDP} + E_{\text{lost}}
-   \]
+   $$
 
 ### Summary
 

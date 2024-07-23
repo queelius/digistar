@@ -72,7 +72,7 @@ For presentation purposes, a client may decide to render composites differently 
 
 ### Advantages
 - Allows for dynamic formation and breaking of composites.
-- Efficient O(α(n)) time complexity for union and find operations.
+- Efficient $O(\alpha(n))$ time complexity for union and find operations.
 
 ## 3. Bounding Volumes for Composites
 
@@ -172,7 +172,7 @@ Tensor3x3 calculateMomentOfInertia(const std::vector<BigAtom>& atoms, float3 com
 }
 
 float3 calculateAngularVelocity(float3 L, Tensor3x3 I) {
-    // Solve I * ω = L for ω
+    // Solve I * \omega = L for \omega
     // This is a simplification; in practice, you'd need to invert I
     return L / (I.xx + I.yy + I.zz);
 }

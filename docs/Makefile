@@ -2,7 +2,7 @@
 
 # List of markdown files in order
 MARKDOWN_FILES = \
-introduction.md \
+    introduction.md \
     overview.md \
     big-atom-fundamentals.md \
     temperature-dynamics.md \
@@ -19,13 +19,22 @@ introduction.md \
     decentralized-space.md \
     agent-framework.md
 
-# Output file
-OUTPUT_FILE = design_document.md
+# Output files
+OUTPUT_MD = design-doc.md
+OUTPUT_PDF = design-doc.pdf
+
+# Default target
+all: $(OUTPUT_MD)
 
 # Concatenate markdown files
-$(OUTPUT_FILE): $(MARKDOWN_FILES)
-	cat $(MARKDOWN_FILES) > $(OUTPUT_FILE)
+$(OUTPUT_MD): $(MARKDOWN_FILES)
+	cat $(MARKDOWN_FILES) > $(OUTPUT_MD)
 
+# Generate PDF from markdown
+$(OUTPUT_PDF): $(OUTPUT_MD)
+	pandoc $(OUTPUT_MD) -o $(OUTPUT_PDF)
+
+# Clean up generated files
 .PHONY: clean
 clean:
-	rm -f $(OUTPUT_FILE)
+	rm -f $(OUTPUT_MD) $(OUTPUT_PDF)

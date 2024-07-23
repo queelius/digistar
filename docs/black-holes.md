@@ -20,7 +20,7 @@ Big Atoms is given by:
 $$
 U(\vec{r}) = -\frac{G m_1 m_2}{|r|}
 $$
-    
+
 where:
 - $G$ is the gravitational constant,
 - $m_1$ and $m_2$ are the masses of the two Big Atoms, and
