@@ -1,7 +1,7 @@
 ## Fission and Fusion in Big Atom Simulations
 
 In our big atom simulation, we introduce splitting (fission) and mergning (fusion) processes to model
-large-scale nuclear-like interactions. These processes involve the splitting and merging of big atoms,
+large-scale nuclear-like physics. These processes involve the splitting and merging of big atoms,
 resulting in changes to mass, velocity, and energy dynamics. We ensure that the principles of conservation
 of mass, energy, and momentum are maintained throughout these events. Additionally, the energy lost during
 fission and fusion is tracked by incorporating it into the internal temperatures of the Big Atoms,
@@ -36,6 +36,22 @@ $$
 $$
 where $\alpha$ is a constant that scales the probability of a fission event based on the total internal energy $E$. 
 We can see that it has a has life of $\frac{\log 2}{\alpha E}$. We normally want to choose $\alpha$ so that the half-life is calibrated to the needs of the simulation.
+
+We imagine that a large big atom has an internal structure, and so when it decays, we do no simply split it in half. Suppose the big atom has a mass of $m$. When it
+decays, it splits it into two pieces, a large piece $m_{\text{large}}$ and a small piece $m_{\text{small}}$, where
+$$
+    m_{\text{small}} = \min(m_{\epsilon}, 0.5 M}
+$$
+and
+$$
+    m = m_{\text{small}} + m_{\text{large}} + \epsilon.
+$$
+
+A viewer of the physics simulation may choose to treat very small big atoms in a differnet way, e.g., not show them at all, onlying showing big atoms or clusters of
+big atoms above a certain threshold.
+
+In a sense, we may treat $m_{\epsilon}$ as the smallest unit of mass, but that is up to the physics simulation. The additional $\epsilon$ mass represents lost energy,
+which we desribe later.
 
 See Figure 1 for a visual representation of the probability of fission based on internal energy. We see that as the energy 
 

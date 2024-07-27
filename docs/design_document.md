@@ -208,118 +208,110 @@ When big atoms form clusters based on their interactions (e.g., via the Morse po
 ### Summary
 
 By focusing on fundamental properties and deriving relational properties through interactions and clustering, we maintain flexibility and realism in our space sandbox simulation. This approach supports emergent behaviors, allowing players to experience a rich and engaging simulation environment. The fundamental properties of big atoms include mass, radius, position, velocity, charge, interaction vector, rotational state, internal temperature, magnetic moment, and resource content. These properties provide the basis for modeling complex interactions and dynamics, ensuring both physical realism and exciting gameplay.
-### Design Document: Internal Temperature and Dynamic Interactions
+### Radiation Pressure Model
 
-#### Internal Temperature of Big Atoms and its Influence on Dynamics
+In this model, each big atom emits radiation energy based on its internal energy \( U \), radius \( R \), and mass \( m \). The emitted energy influences nearby objects by exerting radiation pressure, modeled as a potential energy function. The radius \( R \) of a big atom dynamically changes based on its internal energy and mass, allowing for continuous contraction without a predefined maximum energy limit.
 
-This section details how the internal temperature of a big atom influences the dynamic interactions within the simulation. By modeling the Sun as a big atom, we demonstrate the computation of internal temperature, its impact on the potential energy field, and the resulting force field that affects the motion of other particles. This approach ensures realistic and engaging simulation dynamics.
+### Radiation Emission and Dynamic Radius
 
-#### Internal Temperature
+1. **Dynamic Radius Model**:
+   - The radius \( R \) of a big atom changes as a function of its internal energy \( U \):
+     \[ R(U, m) = R_0 \left(1 - \beta \frac{U}{\eta m}\right) \]
+   - Here, \( R_0 \) is the base radius, \(\beta\) is a small constant controlling the degree of shrinkage, and \(\eta\) is a proportionality constant for energy density.
 
-The internal temperature of a big atom represents the kinetic energy of its internal components. This internal energy influences the potential energy field around the big atom, affecting nearby particles.
+2. **Energy Emission Rate**:
+   - The energy emitted per time step \(\Delta E\) is modeled as:
+     \[ \Delta E = \alpha \frac{U^4}{R(U, m)^{10}} \Delta t \]
+   - Here, \(\alpha\) is a proportionality constant simplifying the computation, and \(\Delta t\) is the time step duration.
 
-1. **Internal Kinetic Energy ($E_{\text{internal}}$)**:
-   $$
-   E_{\text{internal}} = k_B T_{\text{internal}}
-   $$
-   where $k_B$ is Boltzmann's constant and $T_{\text{internal}}$ is the internal temperature of the big atom.
+3. **Internal Energy Update**:
+   - For each big atom, the internal energy \( U \) is updated by deducting \(\Delta E\):
+     \[ U_{\text{new}} = U - \Delta E \]
 
-#### Potential Energy Function
+### Radiation Pressure Influence
 
-The internal temperature induces a potential energy field around the big atom. The potential energy ($U_T$) is given by:
-$$
-U_T = k_T T_{\text{internal}}
-$$
-where $k_T$ is a scaling factor that determines the strength of the potential field.
+1. **Radiation Pressure**:
+   - The radiation pressure \( P \) of an emitting big atom with internal energy \( U \) and dynamic radius \( R(U, m) \) is:
+     \[ P = k \frac{U}{R(U, m)^3} \]
+   - Here, \( k \) is a constant relating the internal energy and radius to the radiation pressure.
 
-#### Force Field
+2. **Force on Nearby Objects**:
+   - The force \( F_{ij} \) on an object \( j \) at distance \( r_{ij} \) from the emitting atom \( i \) with radius \( R_j \) is calculated as:
+     \[ F_{ij} = P_i \cdot A_j \cdot \left( \frac{R_j}{R(U_i, m_i) + r_{ij}} \right)^2 \]
+   - Where \( A_j = \pi R_j^2 \) is the cross-sectional area of object \( j \).
 
-The force field ($\vec{F}$) is derived from the negative gradient of the potential energy:
-$$
-\vec{F} = -\nabla U_T
-$$
-Assuming $U_T$ depends on the distance $r$ from the center of the big atom, we get:
-$$
-U_T(r) = \frac{k_T T_{\text{internal}}}{r}
-$$
-The force is then:
-$$
-\vec{F} = -\frac{dU_T}{dr} \hat{r} = -\frac{d}{dr} \left( \frac{k_T T_{\text{internal}}}{r} \right) \hat{r} = k_T T_{\text{internal}} \frac{1}{r^2} \hat{r}
-$$
+### Composite Structures
 
-#### Example: Modeling the Sun as a Big Atom
+Composite structures made of big atoms can extend in space such that different parts of the structure are at varying distances from the radiating big atom. This setup can result in differential radiation pressure across the structure, potentially applying a torque and causing rotational dynamics.
 
-To illustrate the impact of internal temperature on dynamics, we model the Sun as a big atom. We compute the internal temperature, derive the potential energy function, compute the force field, and update the positions and velocities of nearby particles.
+### Implementation Steps
 
-1. **Given Parameters**:
-   - Mass of the particle ($m$) = 1 kg
-   - Initial position of the particle ($\vec{p}$) = (1 AU, 0, 0) where 1 AU = $1.496 \times 10^{11}$ meters
-   - Initial velocity of the particle ($\vec{v}$) = (0, 0, 0)
-   - Internal temperature of the Sun ($T_{\text{internal}}$) = $1.57 \times 10^7$ K
-   - Scaling factor for the potential energy ($k_T$) = $1 \times 10^{-23}$ J/K
-   - Time step ($\Delta t$) = 1 second
+1. **Define Parameters**:
+   - \(\alpha\): Proportionality constant for energy emission.
+   - \( k \): Proportionality constant for radiation pressure.
+   - \(\beta\): Constant controlling the degree of shrinkage.
+   - \(\eta\): Proportionality constant for energy density.
+   - \( R_0 \): Base radius.
+   - \(\Delta t\): Time step duration.
 
-2. **Computations**:
-   - Compute the force on the particle due to the Sun's internal temperature.
-   - Update the particle's position and velocity using the time step.
+2. **Initialize Big Atoms**:
+   - Each big atom has initial internal energy \( U \), position \( \vec{r} \), velocity \( \vec{v} \), mass \( m \), and radius \( R \).
 
-```python
-import numpy as np
+3. **Update Loop**:
+   - For each time step:
+     1. **Energy Emission**:
+        - Calculate the dynamic radius \( R(U, m) \) for each big atom:
+          \[ R(U, m) = R_0 \left(1 - \beta \frac{U}{\eta m}\right) \]
+        - Calculate \(\Delta E\) for each big atom:
+          \[ \Delta E = \alpha \frac{U^4}{R(U, m)^{10}} \Delta t \]
+        - Update the internal energy \( U \):
+          \[ U_{\text{new}} = U - \Delta E \]
+     2. **Radiation Pressure**:
+        - Calculate the radiation pressure \( P \) for each emitting atom:
+          \[ P = k \frac{U}{R(U, m)^3} \]
+        - Calculate the force \( F_{ij} \) on each nearby object \( j \):
+          \[ F_{ij} = P_i \cdot A_j \cdot \left( \frac{R_j}{R(U_i, m_i) + r_{ij}} \right)^2 \]
+     3. **Velocity and Position Update**:
+        - Update the velocities and positions of the big atoms based on the calculated forces.
+        - For composite structures, compute the net force and torque, and update the rotational dynamics accordingly.
 
-# Constants
-k_B = 1.38e-23  # Boltzmann's constant in J/K
-AU = 1.496e11  # 1 Astronomical Unit in meters
-G = 6.67430e-11  # Gravitational constant in m^3 kg^-1 s^-2
+### Example Calculation
 
-# Given parameters
-m_particle = 1.0  # mass of the particle in kg
-T_internal_sun = 1.57e7  # internal temperature of the Sun in K
-k_T = 1e-23  # scaling factor in J/K
-r_initial = AU  # initial distance from the Sun in meters
-v_initial = np.array([0.0, 0.0, 0.0])  # initial velocity in m/s
-p_initial = np.array([r_initial, 0.0, 0.0])  # initial position in meters
-dt = 1.0  # time step in seconds
+1. **Initial State**:
+   - Object A: \( U_A = 1000 \, \text{J} \), \( R_A = 1 \, \text{m} \), \( m_A = 10^6 \, \text{kg} \)
+   - Object B: \( U_B = 2000 \, \text{J} \), \( R_B = 0.5 \, \text{m} \), \( m_B = 10^5 \, \text{kg} \)
 
-# Potential energy function
-def potential_energy(T_internal, k_T, r):
-    return k_T * T_internal / r
+2. **Dynamic Radius**:
+   - Calculate the dynamic radius for Object A:
+     \[ R_A(U) = 1 \, \text{m} \left(1 - \beta \frac{1000 \, \text{J}}{\eta (10^6 \, \text{kg})}\right) \]
+   - Calculate the dynamic radius for Object B:
+     \[ R_B(U) = 0.5 \, \text{m} \left(1 - \beta \frac{2000 \, \text{J}}{\eta (10^5 \, \text{kg})}\right) \]
 
-# Force field (gradient of potential energy)
-def force_field(T_internal, k_T, r):
-    F_magnitude = k_T * T_internal / r**2
-    return F_magnitude * -np.array([1, 0, 0])  # Force vector direction
+3. **Radiation Emission**:
+   - Calculate \(\Delta E\) for Object A:
+     \[ \Delta E_A = \alpha \frac{1000^4}{R_A(U)^{10}} \Delta t \]
+   - Calculate \(\Delta E\) for Object B:
+     \[ \Delta E_B = \alpha \frac{2000^4}{R_B(U)^{10}} \Delta t \]
 
-# Update position and velocity
-def update_position_velocity(p, v, a, dt):
-    v_new = v + a * dt
-    p_new = p + v_new * dt
-    return p_new, v_new
+4. **Radiation Pressure**:
+   - Calculate the radiation pressure for Object A:
+     \[ P_A = k \frac{U_A}{R_A(U)^3} \]
 
-# Initial calculations
-r = np.linalg.norm(p_initial)
-U_T_initial = potential_energy(T_internal_sun, k_T, r)
-F_initial = force_field(T_internal_sun, k_T, r)
-a_initial = F_initial / m_particle
+5. **Force on Object B**:
+   - Calculate the force \( F_{AB} \) on Object B:
+     \[ F_{AB} = P_A \cdot A_B \cdot \left( \frac{R_B}{R_A(U) + r_{AB}} \right)^2 \]
 
-# Update position and velocity
-p_new, v_new = update_position_velocity(p_initial, v_initial, a_initial, dt)
+6. **Update Velocities and Positions**:
+   - Update the velocities and positions based on the calculated forces.
+   - For composite structures, compute the net force and torque to update rotational dynamics.
 
-# Output results
-print(f"Initial Position: {p_initial}")
-print(f"Initial Velocity: {v_initial}")
-print(f"Force on Particle: {F_initial}")
-print(f"Acceleration of Particle: {a_initial}")
-print(f"New Position after {dt} seconds: {p_new}")
-print(f"New Velocity after {dt} seconds: {v_new}")
-```
+### Conclusion
 
-#### Conclusion
-
-By modeling the internal temperature of the Sun as a big atom, we have demonstrated how internal energy influences the dynamics of the simulation. The internal temperature induces a potential energy field that affects nearby particles, and the resulting force field is used to update the positions and velocities of these particles. This approach ensures realistic and engaging simulation dynamics, providing a rich and interactive environment for players in the space sandbox simulation.
+This simplified model provides a robust and scalable approach for simulating radiation pressure and thermal contraction in a sandbox space simulation. By allowing the radius to dynamically change based on internal energy and mass, and by modeling radiation pressure as a potential energy function, the simulation can capture complex interactions and interesting behaviors. This approach ensures that high-energy states can lead to significant contraction, potentially down to relativistic scales, adding another layer of realism and complexity to the simulation.
 ## Fission and Fusion in Big Atom Simulations
 
 In our big atom simulation, we introduce splitting (fission) and mergning (fusion) processes to model
-large-scale nuclear-like interactions. These processes involve the splitting and merging of big atoms,
+large-scale nuclear-like physics. These processes involve the splitting and merging of big atoms,
 resulting in changes to mass, velocity, and energy dynamics. We ensure that the principles of conservation
 of mass, energy, and momentum are maintained throughout these events. Additionally, the energy lost during
 fission and fusion is tracked by incorporating it into the internal temperatures of the Big Atoms,
@@ -354,6 +346,22 @@ $$
 $$
 where $\alpha$ is a constant that scales the probability of a fission event based on the total internal energy $E$. 
 We can see that it has a has life of $\frac{\log 2}{\alpha E}$. We normally want to choose $\alpha$ so that the half-life is calibrated to the needs of the simulation.
+
+We imagine that a large big atom has an internal structure, and so when it decays, we do no simply split it in half. Suppose the big atom has a mass of $m$. When it
+decays, it splits it into two pieces, a large piece $m_{\text{large}}$ and a small piece $m_{\text{small}}$, where
+$$
+    m_{\text{small}} = \min(m_{\epsilon}, 0.5 M}
+$$
+and
+$$
+    m = m_{\text{small}} + m_{\text{large}} + \epsilon.
+$$
+
+A viewer of the physics simulation may choose to treat very small big atoms in a differnet way, e.g., not show them at all, onlying showing big atoms or clusters of
+big atoms above a certain threshold.
+
+In a sense, we may treat $m_{\epsilon}$ as the smallest unit of mass, but that is up to the physics simulation. The additional $\epsilon$ mass represents lost energy,
+which we desribe later.
 
 See Figure 1 for a visual representation of the probability of fission based on internal energy. We see that as the energy 
 
@@ -1108,6 +1116,37 @@ This approach allows for dynamic modeling of composites in the simulation:
 - Bounding volumes provide quick approximate interactions between composites.
 
 The system maintains flexibility, allowing for both fine-grained interactions between individual Big Atoms and efficient handling of larger-scale composite behaviors.
+### Big-Picture Overview
+
+**Objective**: Simulate large-scale, cloud-like, nebula-like, or fluid-like formations using discrete big atoms with very low mass, charge, and other properties.
+
+### Key Concepts
+
+1. **Big Atoms**: Represent the nebula with large-radius big atoms that have low mass, low charge, and low thermal radiation. These atoms are distributed sparsely but cover a large volume.
+
+2. **Minimal Interactions**: Due to their low mass and other properties, these big atoms interact weakly with each other, ensuring they spread out and form diffuse structures.
+
+3. **Cohesive Forces**: Use either:
+   - **Non-Stiff Springs**: Connect neighboring big atoms with springs that provide gentle cohesion without causing stiff interactions.
+   - **Morse Potential**: Apply a potential function to simulate bonding forces that maintain the structure's integrity while allowing flexibility.
+
+4. **Force Calculations**:
+   - Use the Barnes-Hut algorithm to efficiently calculate gravitational and other long-range forces.
+   - Apply additional forces due to thermal radiation and other interactions based on the low properties of big atoms.
+
+5. **Simulation Loop**:
+   - **Initialization**: Set up initial positions, velocities, and connections (springs) for big atoms.
+   - **Force Calculation**: Compute forces using Barnes-Hut for long-range interactions and directly calculate spring or potential forces.
+   - **Update**: Update positions and velocities of big atoms based on computed forces, incorporating energy dissipation over time.
+   - **Visualization**: Render the big atoms as amorphous, cloud-like structures to depict the nebula.
+
+### Visualization
+
+- **Amorphous Representation**: Use techniques like alpha blending, particle-based rendering, or volume rendering to visualize the diffuse, cloud-like nature of the big atoms, emphasizing their large radii and weak interactions.
+
+### Summary
+
+This approach uses discrete, low-mass big atoms to model fluid-like, cloud-like formations. By leveraging non-stiff springs or potential functions for cohesion and using efficient force calculation methods like Barnes-Hut, the simulation maintains a balance between structural integrity and fluid-like behavior, suitable for representing nebulae and similar large-scale formations.
 ### Toroidal Space Topology
 
 #### Overview
@@ -1886,3 +1925,173 @@ class SubsumptionAgent(Agent):
                 behavior.run()
                 break
 ```
+# Basic Units
+
+This section outlines the base units for our sandbox simulation. It details the unit choices for mass, distance, and time, provides conversions for key astronomical quantities, and discusses the rationale behind these choices. The document focuses on ensuring stability, numerical precision, and realistic system design. Additionally, it provides relevant physical constants and their conversions to these units.
+
+### Basic Units
+
+1. **Mass Unit (mu)**: $1 \text{ mu} = 10^6 \text{ kg}$
+2. **Distance Unit (du)**: $1 \text{ du} = 10^6 \text{ meters}$
+3. **Time Unit (tu)**: $1 \text{ tu} = 10^6 \text{ seconds}$
+
+### Key Conversions
+
+#### Distance
+
+- 1 Astronomical Unit (AU): $1.5 \times 10^1 \text{ du}$
+- 1 Earth Radius: $6.371 \times 10^{-4} \text{ du} \approx 10^{-3} \text{ du}$
+- 1 Moon Radius: $1.737 \times 10^{-4} \text{ du} \approx 10^{-3} \text{ du}$
+- 1 Light Year: $9.461 \times 10^5 \text{ du} \approx 10^6 \text{ du}$
+- 1 Parsec: $3.086 \times 10^6 \text{ du} \approx 3 \times 10^6 \text{ du}$
+
+#### Mass
+
+- 1 Earth Mass: $5.972 \times 10^4 \text{ mu} \approx 6 \times 10^4 \text{ mu}$
+- 1 Solar Mass: $1.989 \times 10^{10} \text{ mu} \approx 2 \times 10^{10} \text{ mu}$
+- 1 Jupiter Mass: $1.898 \times 10^7 \text{ mu} \approx 2 \times 10^7 \text{ mu}$
+- 1 Moon Mass: $7.34 \times 10^2 \text{ mu} \approx 10^3 \text{ mu}$
+
+#### Time
+
+- 1 Year: $3.154 \times 10^1 \text{ tu} \approx 30 \text{ tu}$
+- 1 Day: $8.64 \times 10^{-2} \text{ tu} \approx 0.1 \text{ tu}$
+- 1 Hour: $3.6 \times 10^{-3} \text{ tu}$
+- 1 Minute: $6 \times 10^{-5} \text{ tu}$
+- 1 Second: $1 \times 10^{-6} \text{ tu}$
+
+### Example Objects
+
+#### Gigantic Battleship
+
+1. **Length**: 100 miles $\approx 1.6 \times 10^{-2} \text{ du}$
+2. **Mass**: 200 aircraft carriers (assuming each carrier is $10^8 \text{ kg}$) $= 2 \times 10^{-4} \text{ mu}$
+
+#### Dyson Sphere
+
+1. **Radius**: 1 AU $\approx 15 \text{ du}$
+2. **Surface Area**: $4\pi r^2 \approx 3 \times 10^3 \text{ du}^2$
+3. **Mass**: Assuming 1% of Earth's mass $\approx 6 \times 10^2 \text{ mu}$
+
+### Relevant Physical Constants
+
+#### Newton's Universal Gravitational Constant (G)
+
+- Standard Units: $G = 6.6743 \times 10^{-11} \text{ m}^3 
+  \text{ kg}^{-1} \text{ s}^{-2}$
+- In preferred units:
+
+$$
+\begin{align*}
+G_{\text{new}} &=
+G \times \left(\frac{1 \text{ du}}{10^{10} \text{ m}}\right)^3 \times \left(\frac{10^{20} \text{ kg}}{1 \text{ mu}}\right) \times \left(\frac{10^6 \text{ s}}{1 \text{ tu}}\right)^2\\
+&= 6.6743 \times 10^{-11} \times 10^{-30} \times 10^{20} \times 10^{12} \\
+&\approx 6.6743 \times 10^{-9} \text{ du}^3 \text{ mu}^{-1} \text{ tu}^{-2}\\
+&\approx 10^{-8} \text{ du}^3 \text{ mu}^{-1} \text{ tu}^{-2}
+\end{align*}
+$$
+
+#### Speed of Light (c)
+
+- Standard Units: $c = 2.998 \times 10^8 \text{ m/s}$
+- In preferred units:
+
+$$
+\begin{align*}
+c_{\text{new}} &=
+c \times \frac{\text{tu}}{\text{du}} \\
+&= 2.998 \times 10^8 \times \frac{10^6}{10^{10}} \\
+&\approx 3 \times 10^4 \text{ du/tu}
+\end{align*}
+$$
+
+### Derived Units
+
+#### Velocity Unit (vu)
+
+- Standard Units: $\text{m/s}$
+- In preferred units: $1 \text{vu} = \frac{1 \text{ du}}{1 \text{ tu}} = 10^4 \text{ m/s}$
+
+#### Acceleration Unit (au)
+
+- Standard Units: $\text{m/s}^2$
+- In preferred units: $1 \text{ au} = \frac{1 \text{ du}}{1 \text{ tu}^2} = 10^{-2} \text{ m/s}^2$
+
+#### Force Unit (fu)
+
+- Standard Units: $\text{N} = \text{kg} \cdot \text{m/s}^2$
+- In preferred units: $1 \text{ fu} = 1 \text{ mu} \cdot \frac{1 \text{ du}}{1 \text{ tu}^2} = 10^{20} \text{ kg} \cdot 10^{-2} \text{ m/s}^2 = 10^{18} \text{ N}$
+
+#### Energy Unit (eu)
+
+- Standard Units: $\text{J} = \text{kg} \cdot \text{m}^2 / \text{s}^2$
+- In preferred units: $1 \text{ eu} = 1 \text{ mu} \cdot \frac{1 \text{ du}^2}{1 \text{ tu}^2} = 10^{20} \text{ kg} \cdot 10^{20} \text{ m}^2 / 10^{12} \text{ s}^2 = 10^{28} \text{ J}$
+
+### Complete Example: Earth
+
+#### Mass of Earth
+
+- Standard Units: $5.972 \times 10^{24} \text{ kg}$
+- In preferred units: $5.972 \times 10^4 \text{ mu}$
+
+#### Radius of Earth
+
+- Standard Units: $6.371 \times 10^6 \text{ m}$
+- In preferred units: $6.371 \times 10^{-4} \text{ du}$
+
+#### Surface Gravity of Earth
+
+- Standard Units: $g = \frac{G \cdot M}{R^2}$
+- Using standard values:
+
+$$g = \frac{6.67430 \times 10^{-11} \times 5.972 \times 10^{24}}{(6.371 \times 10^6)^2} = 9.81 \text{ m/s}^2$$
+
+- In preferred units:
+
+$$
+\begin{align*}
+g_{\text{new}} &= \frac{G_{\text{new}} \cdot M_{\text{new}}}{R_{\text{new}}^2} \\
+&= \frac{6.67430 \times 10^{-9} \times 5.972 \times 10^4}{(6.371 \times 10^{-4})^2} \\
+&\approx 981 \text{ du/tu}^2
+\end{align*}
+$$
+
+### Additional Examples
+
+#### Orbital Period
+
+For a circular orbit, the period $T$ is given by:
+
+$$T = 2\pi\sqrt{\frac{r^3}{GM}}$$
+
+Where $r$ is the orbital radius, $G$ is the gravitational constant, and $M$ is the mass of the central body.
+
+In our preferred units:
+
+$$T_{\text{new}} = 2\pi\sqrt{\frac{r_{\text{new}}^3}{G_{\text{new}}M_{\text{new}}}}$$
+
+#### Escape Velocity
+
+The escape velocity $v_e$ is given by:
+
+$$v_e = \sqrt{\frac{2GM}{r}}$$
+
+In our preferred units:
+
+$$v_{e,\text{new}} = \sqrt{\frac{2G_{\text{new}}M_{\text{new}}}{r_{\text{new}}}}$$
+
+### Rationale for Unit Choices
+
+1. **Stability**: These units ensure that values used in the simulation remain within a manageable range, avoiding extremely large or small numbers that could lead to numerical instability or overflow/underflow issues.
+
+2. **Avoiding Round-Off Errors**: By keeping the units appropriately scaled, we minimize the risk of round-off errors that can accumulate in large-scale simulations.
+
+3. **Realistic System Design**: The chosen units allow for a realistic representation of celestial bodies and man-made objects, from small asteroids to massive stars and hypothetical megastructures.
+
+4. **Scalability**: These units allow for the simulation of a wide range of objects without needing to frequently adjust the scale, making the simulation flexible and adaptable to different scenarios.
+
+5. **Compatibility with Astrophysical Phenomena**: The units are well-suited for simulating large-scale astrophysical phenomena while excluding constants relevant only at quantum scales.
+
+### Conclusion
+
+The chosen units of mass, distance, and time provide a robust foundation for the multi-star system sandbox simulation. They ensure numerical stability and precision while allowing for realistic and scalable system design. By adhering to these units, we can create a versatile and accurate simulation environment that can accommodate various astronomical and artificial objects, facilitating meaningful exploration and experimentation within the simulation.
