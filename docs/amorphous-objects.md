@@ -1,4 +1,4 @@
-### Big-Picture Overview
+## Amorphous Objects: Gas Clouds, Nebulae, Atmospheres
 
 **Objective**: Simulate large-scale, cloud-like, nebula-like, or fluid-like formations using discrete big atoms with very low mass, charge, and other properties.
 
@@ -25,6 +25,14 @@
 ### Visualization
 
 - **Amorphous Representation**: Use techniques like alpha blending, particle-based rendering, or volume rendering to visualize the diffuse, cloud-like nature of the big atoms, emphasizing their large radii and weak interactions.
+
+### PDE
+
+We could alternatively use standard PDE techniques. These typically require regular grids which contain densities, like mass densities. We can map our octree to a regular grid with densities (mass, charge, etc.) 
+y traversing the tree and if at any point we reach a cell for which the children are sufficiently similiar in densities, we can map that entire cell to a regular grid where each cell has some global, fixed dimension.
+The fixed cell dimension can be done once all of the octree node stopping points have been computed, so that the global cell size is the minimum size of the smallest octree node that satisfied our conditions.
+This allows for rapid generation of regular grids dynamically sized to be as large as possible, so that we may then apply PDE algorithms like FDM or FFT to evolve the system. It would be for more amorophous kinds of things
+in general, but it can be used for any kind of dynamics.
 
 ### Summary
 

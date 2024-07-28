@@ -11,6 +11,7 @@
   - [Tensor Springs](tensor-springs.md)
 - [Clustering](big-atom-clusters.md)
 - [Amorphous Structure](amorphous-objects.md)
+- [Restorative Orbits](restorative-orbits.md)
 - [Toroidal Space Topology](space-topology.md)
 - Spatial Indexing
   - [Octrees](data-management-and-spatial-index.md)
