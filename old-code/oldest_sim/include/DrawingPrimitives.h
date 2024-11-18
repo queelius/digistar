@@ -1,0 +1,4 @@
+#ifndef DRAWING_PRIMITIVES_H
+#define DRAWING_PRIMITIVES_H
+
+#endif

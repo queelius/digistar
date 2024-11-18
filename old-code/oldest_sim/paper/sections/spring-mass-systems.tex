@@ -1,0 +1,146 @@
+\documentclass[ ../main.tex]{subfiles}
+\providecommand{\mainx}{..}
+\begin{document}
+\section{Newton's laws}
+We consider a physical object, denoted $A$, with mass $m_A$, velocity $\vb{v_A}(t)$, momentum $\vb{p_A}(t)$, and position $\vb{r_A}(t)$ at time $t$, in which $\vb{p_A}(t)$ is influenced by a force $\vb{F_A}(t)$.
+
+By Newton's second law of motion,
+\begin{equation}
+\vb{F_A}(t) = \dv{t} \vb{p_A}(t)\,,
+\end{equation}
+where $\vb{p_A}(t)$ is the momentum of object $A$. Since $\vb{p_A}(t) = m \vb{v_A}(t)$, we have
+\begin{equation}
+\vb{F_A}(t) = m_A \dv{t} \vb{v_A}(t)\,.
+\end{equation}
+Thus,
+\begin{equation}
+\dv{t} \vb{v_A}(t) = \frac{1}{m_A} \vb{F_A}(t)\,.
+\end{equation}
+This is a separable equation. To solve for $\vb{v_A}(t)$, we need only solve
+\begin{equation}
+\dd{\vb{v_A}}(t) = \frac{1}{m_A} \vb{F_A}(t) \dd{t}\,.
+\end{equation}
+Integrating both sides results in
+\begin{equation}
+\vb{v_A}(t) = \frac{1}{m_A} \int \vb{F_A}(t) \dd{t}\,.
+\end{equation}
+To solve for position, we need only solve
+\begin{equation}
+\vb{r_A}(t) = \int \vb{v_A}(t) \dd{t}\,.
+\end{equation}
+These provide a family of solutions. To find a unique solution, we require two initial boundary conditions,
+\begin{equation}
+\vb{v_A}(t_0) = \vb{v_0}
+\end{equation}
+and
+\begin{equation}
+\vb{r_A}(t_0) = \vb{r_0}\,.
+\end{equation}
+Thus,
+\begin{equation}
+\vb{v_A}(t) = \frac{1}{m_A} \int_{t_0}^{t} \vb{F_A}(s) \dd{s} + \vb{v_0}
+\end{equation}
+and
+\begin{equation}
+\vb{r_A}(t) = \int_{t_0}^{t} \vb{v_A}(s) \dd{s} + \vb{r_0}\,.
+\end{equation}
+Note that if $m_A$ is a function of time $t$, then
+\begin{equation}
+\vb{v_A}(t) = \int_{t_0}^{t} \frac{\vb{F_A}(s)}{m_A(s)} \dd{s} + \vb{v_0}\,.
+\end{equation}
+
+We are interested in the state of object $A$ at certain points in time, $t_0,\ldots,t_n$, where the velocity is given by
+\begin{equation}
+\label{eq:vel_eq}
+    \vb{v_A}(t_k) = \frac{1}{m_A} \int_{t_{k-1}}^{t_k} \vb{F_A}(s) \dd{s} + \vb{v_{k-1}}
+\end{equation}
+and the position is given by
+\begin{equation}
+    \vb{r_A}(t_k) = \int_{t_{k-1}}^{t_k} \vb{v_A}(s) \dd{s} + \vb{r_{k-1}}\,.
+\end{equation}
+for $k=1,\ldots,n$. If $m_A(t)$ is not constant, it may be reasonable to assume it is approximately constant over a time interval $(t_{k-1},t_k]$ and so the velocity equation given by eq.~\ref{eq:vel_eq} holds.
+
+Typically, numerical integration techniques are used to solve these equations of motion. This is a second-order differential equation, and thus we transform the problem slightly to make it amenable to numerical integration. First, we consider each component of the $\vb{v_A}(t)$, $\vb{r_A}(t)$, and $\vb{F_A}(t)$ separately.
+
+The $j$-th component of a vector $\vb{y_A}$ is denoted by $y_j$, where the $A$ has been dropped to simplify the presentation. Thus,
+\begin{equation}
+    F_j = f(r_1,r_2,v_1,v_2
+\end{equation}
+
+
+The force $\vb{F_A}(t)$ exerted on object $A$ may depend on any number of factors, such as the object's current velocity (e.g., friction or drag) or a surrounding field (e.g., gravity). We consider a few cases next.
+
+\section{Spring-mass system}
+Consider Hooke's law, an ideal spring model in which the force exerted is given by
+\begin{equation}
+\label{eq:hooke}
+\vb{F_{A,\mathrm{spring}}}(t) = -k \vb{d}(t)\,,
+\end{equation}
+where the spring constant, denoted $k$, determines the spring's \emph{stiffness} and $\vb{d}(t)$ is the spring's displacement from equilibrium. For instance, if we attach one end of the spring to object $A$ (at position $\vb{r_A}(t)$) and the other end at position $\vb{r_B}(t)$, and specify an equilibrium distance $d$, then the spring exerts a force on object $A$ at time $t$ given by eq~\eqref{eq:hooke} with a $\vb{d}(t)$ given by
+\begin{equation}
+\vb{d}(t) = \left(\norm{\vb{r_a}(t) - \vb{r_B}(t)} - d\right) \frac{\vb{r_A}(t) - \vb{r_B}(t)}{\norm{\vb{r_A}(t) - \vb{r_B}(t)}}\,.
+\end{equation}
+Simplifying, this results in
+\begin{equation}
+\vb{d}(t) = \vb{r_A}(t) - \vb{r_B}(t) - d \vb{u}(t)\,,
+\end{equation}
+where
+\begin{equation}
+    \vb{u}(t) = \frac{\vb{r_A}(t) - \vb{r_B}(t)}{\norm{\vb{r_A}(t) - \vb{r_B}(t)}}\,.
+\end{equation}
+
+Hooke's law, as given by eq~\eqref{eq:hooke}, is a second-order differential equation that can be analytically solved. For instance, if we consider just the $x$ direction, the spring exerts a force on the object $A$ given by
+\begin{equation}
+    F_x(t) = m_A \dv{t} v(t) = -k d(t)\,,
+\end{equation}
+where $d(t)$ is the displacement from equilibrium and $v(t)$ is the velocity (the rate at which $d(t)$ is changing). Thus,
+\begin{equation}
+    \dv{t} v(t) = \dv[2]{t} d(t) = -\frac{k}{m_A} d(t)\,.
+\end{equation}
+What's a function $d$ whose second-order derivative is proportional to the negative of itself? The sinusoidal function. Let
+\begin{equation}
+    d(t) = \alpha \sin(\sqrt\frac{k}{m_A} t + \phi)
+\end{equation}
+Then,
+\begin{equation}
+    \dv[2]{t} d(t) = -\alpha \frac{k}{m_A} \sin(\sqrt\frac{k}{m_A} t + \phi) = -\frac{k}{m_A} d(t)\,.
+\end{equation}
+Thus, we see that, if object $A$ experiences only the force from the spring, it will move periodically as described by the sinusoidal function, i.e., simple harmonic motion. Of course, there are probably many other forces acting on object $A$, such as gravity and spring dampening.
+
+Let us consider spring dampening. Intuitively, it makes sense that the faster the spring is being displaced from equilibrium by object $A$, the more resistive it will become,
+\begin{equation}
+    \vb{F_{A,\mathrm{spring}}}(t) = -k \vb{d}(t) - \beta \vb{v_d}(t)\,,
+\end{equation}
+where $\vb{v_d}(t) = \dv{t} \vb{d}(t)$. Thus,
+\begin{equation}
+    \dv{t} \vb{v_A}(t) = -\frac{k}{m_A} \vb{d}(t) - \frac{\beta}{m_A} \vb{v_d}(t)\,.
+\end{equation}
+Multiplying by $\dd{t}$ and integrating results in
+\begin{align}
+    \vb{v_A}(t)
+        &= -\frac{k}{m_A} \int \vb{d}(t) \dd{t} - \frac{\beta}{m_A} \int \vb{v_d}(t) \dd{t}\\
+        &= -\frac{k}{m_A} \int \vb{d}(t) \dd{t} - \frac{\beta}{m_A} \vb{d}(t)\,.
+\end{align}
+
+\section{Newton's law of universal gravitation}
+By Newton's law of universal gravitation, object $B$ exerts a force on object $A$ given by
+\begin{equation}
+    \vb{F_{A,\mathrm{gravity}}} = G m_A m_B \frac{\vb{r}(t)}{\left(\vb{r}(t) \vdot \vb{r}(t) \right)^{1.5}}
+\end{equation}
+where
+\begin{equation}
+    \vb{r}(t) = \vb{r_A}(t) - \vb{r_B}(t)
+\end{equation}
+If we consider the motion of object $A$ when only the gravitational attraction from object $B$ is under effect, this results in
+\begin{equation}
+    \dv{t} \vb{v_A}(t) = G m_B \frac{\vb{r}(t)}{\left(\vb{r}(t) \vdot \vb{r}(t) \right)^{1.5}}\,.
+\end{equation}
+As before, $\vb{v_A}(t_0) = \vb{v_0}$ and $\vb{r_A}(t_0) = \vb{r_0}$. Thus, multiplying by $\dd{t}$ and integrating results in
+\begin{equation}
+\vb{v_A}(t) = G m_B \int_{t_0}^{t} \frac{\vb{r}(s)}{\left(\vb{r}(s) \vdot \vb{r}(s) \right)^{1.5}} \dd{s} + \vb{v_0}
+\end{equation}
+and
+\begin{equation}
+\vb{r_A}(t) = \int_{t_0}^{t} \vb{v_A}(s) \dd{s} + \vb{r_0}\,.
+\end{equation}
+\end{document}
