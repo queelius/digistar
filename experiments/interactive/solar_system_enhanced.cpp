@@ -527,7 +527,7 @@ void build_enhanced_system(std::vector<Particle>& particles) {
             // B ring: 91,980 - 117,580 km  
             // C ring: 74,500 - 91,980 km
             std::cout << "Adding Saturn's ring system...\n";
-            int ring_particles = 10000;  // Lots of particles for the rings
+            int ring_particles = 2000;  // Lots of particles for the rings
             
             for (int j = 0; j < ring_particles; j++) {
                 // Random radius within ring zones
@@ -593,7 +593,7 @@ void build_enhanced_system(std::vector<Particle>& particles) {
     
     // Add asteroid belt
     std::cout << "Adding asteroid belt...\n";
-    for (int i = 0; i < 5000; i++) {
+    for (int i = 0; i < 50000; i++) {
         float r = 2.2f + 1.1f * uniform(rng);
         float theta = uniform(rng) * 2 * M_PI;
         float v = std::sqrt(SimUnits::G / r);
@@ -609,7 +609,7 @@ void build_enhanced_system(std::vector<Particle>& particles) {
     
     // Add some KBOs
     std::cout << "Adding Kuiper belt objects...\n";
-    for (int i = 0; i < 2000; i++) {
+    for (int i = 0; i < 10000; i++) {
         float r = 30.0f + 20.0f * uniform(rng);
         float theta = uniform(rng) * 2 * M_PI;
         float v = std::sqrt(SimUnits::G / r);

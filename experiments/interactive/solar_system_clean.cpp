@@ -53,12 +53,12 @@ namespace Config {
     namespace Generation {
         // Particle counts
         constexpr int SATURN_RING_PARTICLES = 5000;
-        constexpr int RANDOM_ASTEROIDS = 10000;
-        constexpr int RANDOM_KBOS = 5000;
+        constexpr int RANDOM_ASTEROIDS = 100000;
+        constexpr int RANDOM_KBOS = 50000;
         constexpr int ALPHA_CEN_ASTEROIDS = 3000;
         
         // Distances
-        constexpr float ALPHA_CEN_DISTANCE = 300.0f;  // AU from Sol
+        constexpr float ALPHA_CEN_DISTANCE = 500.0f;  // AU from Sol
         constexpr float ASTEROID_BELT_INNER = 2.2f;   // AU
         constexpr float ASTEROID_BELT_OUTER = 3.3f;   // AU
         constexpr float KUIPER_BELT_INNER = 30.0f;    // AU
@@ -72,8 +72,8 @@ namespace Config {
     
     // Visualization parameters
     namespace Display {
-        constexpr int SCREEN_WIDTH = 120;
-        constexpr int SCREEN_HEIGHT = 35;
+        constexpr int SCREEN_WIDTH = 80;
+        constexpr int SCREEN_HEIGHT = 40;
         constexpr int TRAIL_LENGTH = 200;
         constexpr int FRAME_SKIP = 5;           // Display every Nth frame
         constexpr int TARGET_FPS = 20;
