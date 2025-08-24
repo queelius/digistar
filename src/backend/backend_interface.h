@@ -4,11 +4,31 @@
 #include <string>
 #include "../physics/types.h"
 #include "../physics/pools.h"
+#include "../physics/spatial_index.h"
 
 namespace digistar {
 
-// Forward declarations
-class SpatialIndex;
+// Simulation statistics
+struct SimulationStats {
+    // Performance metrics
+    float update_time_ms = 0;
+    float gravity_time_ms = 0;
+    float contact_time_ms = 0;
+    float spring_time_ms = 0;
+    float integration_time_ms = 0;
+    
+    // System metrics
+    size_t active_particles = 0;
+    size_t active_springs = 0;
+    size_t active_contacts = 0;
+    size_t active_composites = 0;
+    
+    // Physical metrics
+    float total_energy = 0;
+    float total_momentum_x = 0;
+    float total_momentum_y = 0;
+    float average_temperature = 0;
+};
 
 // All simulation data in one place - easy to extend
 struct SimulationState {
@@ -57,6 +77,8 @@ struct PhysicsConfig {
         PARTICLE_MESH,  // FFT-based for large systems
         BARNES_HUT      // Tree-based (future)
     } gravity_mode = PARTICLE_MESH;
+    
+    float gravity_strength = 6.67430e-11f;  // Gravitational constant
     
     // Contact parameters
     float contact_stiffness = 1000.0f;
@@ -118,30 +140,6 @@ public:
     virtual size_t getMaxParticles() const = 0;
 };
 
-// Statistics for monitoring and optimization
-struct SimulationStats {
-    // Timing (milliseconds)
-    float update_time = 0;
-    float integrate_time = 0;
-    float spatial_index_time = 0;
-    float collision_detection_time = 0;
-    float composite_detection_time = 0;
-    
-    // Counts
-    size_t active_particles = 0;
-    size_t active_springs = 0;
-    size_t active_contacts = 0;
-    size_t active_composites = 0;
-    
-    // Physics metrics
-    float total_energy = 0;
-    float max_velocity = 0;
-    float avg_temperature = 0;
-    
-    // Memory usage
-    size_t memory_used_mb = 0;
-    size_t memory_allocated_mb = 0;
-};
 
 // Factory for creating backends
 class BackendFactory {

@@ -25,6 +25,12 @@ SIMULATION_OBJS = $(OBJ_DIR)/main.o \
                   $(OBJ_DIR)/cpu_backend_openmp.o \
                   $(OBJ_DIR)/ascii_renderer.o
 
+# DSL and Command Queue objects
+DSL_OBJS = $(OBJ_DIR)/sexpr.o \
+           $(OBJ_DIR)/evaluator.o \
+           $(OBJ_DIR)/command.o \
+           $(OBJ_DIR)/core_simulation.o
+
 # Backend objects (old - for compatibility)
 BACKEND_OBJS = $(OBJ_DIR)/SimpleBackend.o \
                $(OBJ_DIR)/BackendFactory.o \
@@ -71,8 +77,21 @@ $(OBJ_DIR)/SSE2Backend.o: $(SRC_DIR)/backend/SSE2Backend.cpp
 $(OBJ_DIR)/AVX2Backend.o: $(SRC_DIR)/backend/AVX2Backend.cpp
 	$(CXX) $(CXXFLAGS) -mavx2 -c $< -o $@
 
+# DSL objects compilation
+$(OBJ_DIR)/sexpr.o: $(SRC_DIR)/dsl/sexpr.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/evaluator.o: $(SRC_DIR)/dsl/evaluator.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/command.o: $(SRC_DIR)/dsl/command.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/core_simulation.o: $(SRC_DIR)/core/simulation.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 # Tests
-tests: $(BIN_DIR)/test_algorithms $(BIN_DIR)/test_convergence $(BIN_DIR)/test_accuracy
+tests: $(BIN_DIR)/test_algorithms $(BIN_DIR)/test_convergence $(BIN_DIR)/test_accuracy $(BIN_DIR)/test_dsl $(BIN_DIR)/test_command_queue
 
 $(BIN_DIR)/test_algorithms: $(TEST_DIR)/unit/test_algorithms.cpp $(BACKEND_OBJS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
@@ -82,6 +101,12 @@ $(BIN_DIR)/test_convergence: $(TEST_DIR)/integration/test_convergence.cpp $(BACK
 
 $(BIN_DIR)/test_accuracy: $(TEST_DIR)/validation/test_accuracy.cpp $(BACKEND_OBJS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
+$(BIN_DIR)/test_dsl: $(TEST_DIR)/test_dsl.cpp $(DSL_OBJS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) -lgtest -lgtest_main
+
+$(BIN_DIR)/test_command_queue: $(TEST_DIR)/test_command_queue.cpp $(DSL_OBJS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) -lgtest -lgtest_main
 
 # Benchmarks
 benchmarks: $(BIN_DIR)/benchmark_backends $(BIN_DIR)/benchmark_million

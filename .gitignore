@@ -1,0 +1,21 @@
+# Build outputs
+build/
+*.o
+*.a
+*.so
+*.exe
+
+# Executables
+/bin/
+/test_*
+/benchmark_*
+
+# IDE files
+.vscode/
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
+Thumbs.db

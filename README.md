@@ -1,55 +1,160 @@
-## Sandbox Space Simulation Game Design Document
+# DigiStar - High-Performance N-Body Particle Simulation
 
-### Motivation
+A massively parallel particle simulation system capable of simulating millions of particles in real-time using multiple force calculation algorithms.
 
-The primary motivation for this project is to create a highly interactive and scalable sandbox space simulation game. This game will simulate a vast number of "big atoms" interacting through various interesting forces, both global (e.g., gravity, electric fields) and local (e.g., repulsions, collisions). By leveraging GPU acceleration and optimized data structures like octrees, we aim to achieve high performance and handle a large number of simultaneous players and AI bots efficiently.
+## Features
 
-### Purpose of the Game
+- **Multiple Force Algorithms**
+  - Brute Force: O(n²) - accurate baseline for small systems
+  - Barnes-Hut: O(n log n) - tree-based approximation for medium systems
+  - Particle Mesh: O(n) - FFT-based for large-scale simulations
+  
+- **Optimized Backends**
+  - CPU with OpenMP parallelization
+  - SSE2/AVX2 SIMD optimization
+  - CUDA GPU acceleration (optional)
+  
+- **Real-Time Visualization**
+  - ASCII terminal visualization for up to 2M particles
+  - Interactive controls for panning and zooming
+  - Energy conservation monitoring
+  
+- **Validated Physics**
+  - Accurate solar system simulation with real units
+  - Energy conservation tests
+  - Orbital mechanics validation
 
-The game aims to provide an immersive space simulation environment where players can explore, interact, and experiment with various physical phenomena. Key objectives include:
+## Quick Start
 
-- Simulating a dynamic universe with realistic physics.
-- Simulate interactions between "big atoms" based on fundamental forces and properties.
-- Because the constituent elements are fairly simple, the game can scale to a large number of big atoms, hopefully on the order of 10s of millions, making it possible to simulate complex multi-star systems each with hundreds of planets and moons and thousands of asteroids and comets, each of which may have different properties, behaviors, and resources.
-- Allowing players to manipulate and observe the behavior of "big atoms" under different interaction dynamics and forces.
-- Supporting a large number of concurrent players and AI bots for a rich multiplayer experience.
-- Provide a DSL for celestial mechanics, making it easy to reproduce known systems and to create new ones based on known physics.
-- Enable novel physics that can support relativistic-like effects, black hole formation, warp channels, and other exotic phenomena, all based on fundamental properties of the big atoms and their interactions.
+```bash
+# Build everything
+make all
 
-### Optimization Goals
+# Run solar system example
+./build/bin/solar_system
 
-To achieve the desired scale and performance, we will focus on several key optimizations:
-- **GPU Acceleration**: Offload computationally intensive tasks to the GPU to leverage parallel processing capabilities. We will use CUDA, kernel fusion, memory coalescing, and other GPU optimization techniques to make this possible.
-- **Efficient Data Structures**: Use octrees to manage spatial queries and force calculations efficiently. We will overload the octree to handle many different kinds of forces and interactions.
-- **Batch Processing**: Handle batch bounding box queries in parallel on the GPU to satisfy multiple queries simultaneously from different players and AI bots.
+# Run million particle demo
+./build/bin/million_particles
 
-### Core Features
+# Compare algorithm accuracy
+./build/bin/backend_comparison
+```
 
-#### Physics Simulation
-- **Big Atoms**: Fundamental units of the simulation, each with properties such as position, velocity, mass, charge, radius, interaction vector, rotation, internal temperature, and magnetic moment.
-- **Force Fields**: Includes forces based on potential energy fields, such as gravity, electric fields, magnetic fields, Lennard-Jones potentials, and so on. Many of these forces can be approximated with "cut-off" distances to reduce computational complexity, although it may not even be necessary given the spatial indexing.
-- **Octree Structure**: Utilized for efficient spatial partitioning and force calculations.
+## Project Structure
 
-#### Bounding Box Queries
-- Efficiently handle multiple bounding box queries using batched processing on the GPU.
-- Utilize octrees to quickly determine atoms within specified regions, supporting dynamic game scenarios and AI behaviors.
+```
+digistar/
+├── src/                    # Source code
+│   ├── backend/           # Backend implementations
+│   ├── algorithms/        # Force calculation algorithms
+│   ├── spatial/           # Spatial data structures
+│   ├── dsl/               # Domain-specific language
+│   └── core/              # Core functionality
+├── tests/                 # Test suite
+│   ├── unit/             # Unit tests
+│   ├── integration/      # Integration tests
+│   └── validation/       # Physics validation
+├── benchmarks/           # Performance benchmarks
+├── examples/             # Example applications
+├── tools/                # Utility tools
+└── docs/                 # Design documentation
+    ├── DSL_DESIGN.md                  # DSL overview
+    ├── DSL_LANGUAGE_SPEC.md           # Language specification
+    ├── DSL_ADVANCED_FEATURES.md       # Advanced DSL features
+    ├── EVENT_SYSTEM_ARCHITECTURE.md   # Event system design
+    └── EMERGENT_COMPOSITE_SYSTEM.md   # Composite body system
+```
 
-#### Networking
-- **RESTful Interface**: Provide a lightweight and fast HTTP-based interface for managing game state and interactions.
-- **Binary UDP Interface**: Handle high-throughput, low-latency communication for real-time multiplayer interactions, based on zeromq or similar libraries.
-- **Local IPC**: For local IPC, we use shared memory facilities that bypass system calls for maximum performance. This is particularly useful for AI bots and other high-frequency communication, such as between the physics engine and the rendering engine. The simulation server does not actually perform rendering, so the GPU can be completely dedicated to the physics simulation. 
+## Building
 
-#### Scripting and AI
-- **Python Integration**: Expose a rich API to the Python interpreter, allowing for flexible scripting and AI control.
-- **AI Bots**: Implement a base class `Agent` and derived class `SubsumptionAgent` to facilitate the creation of reactive, intelligent bots. More sophisticated AI frameworks to follow.
-- **Language Modles**: We are also curious about using open source small language models to generate text for the game, either for AI bots or for other purposes in the game.
+### Requirements
+- C++17 compiler (GCC 8+ or Clang 10+)
+- OpenMP support
+- FFTW3 library (optional, for PM algorithm)
+- CUDA toolkit (optional, for GPU backend)
 
-### **Future Work**
+### Build Commands
+```bash
+make all        # Build everything
+make backends   # Build backend libraries
+make tests      # Build test suite
+make benchmarks # Build benchmarks
+make examples   # Build example applications
+make tools      # Build utility tools
+make cuda       # Build CUDA backend (requires NVCC)
+make clean      # Clean build artifacts
+```
 
-- **Further Optimization**: Continuously profile and optimize GPU kernels and data structures.
-- **Advanced AI**: Develop more sophisticated AI behaviors and decision-making processes.
-- **Expanded Features**: Introduce new gameplay elements, force types, and interactive objects.
+## Performance
 
-### Conclusion
+Achieved performance on typical hardware:
+- **1M particles**: 24 FPS with Barnes-Hut on 8-core CPU
+- **2M particles**: 12 FPS with Particle Mesh on 8-core CPU
+- **10M particles**: Target with GPU acceleration
 
-This design document outlines the foundational aspects of our sandbox space simulation game. By leveraging GPU acceleration, efficient data structures, and a robust networking and scripting framework, we aim to create a scalable and engaging simulation experience. This document serves as a reference for the initial implementation and future enhancements, guiding our development efforts toward achieving high performance and rich interactivity.
+## Algorithms
+
+### Barnes-Hut Tree
+- Quadtree spatial subdivision
+- Opening angle θ = 0.5 for accuracy/speed balance
+- ~1% energy drift over 1000 steps
+
+### Particle Mesh
+- Custom FFT implementation (zero dependencies)
+- Cloud-In-Cell (CIC) interpolation
+- Periodic boundary conditions
+
+## Testing
+
+```bash
+# Run unit tests
+./build/bin/test_algorithms
+
+# Test convergence
+./build/bin/test_convergence
+
+# Validate accuracy
+./build/bin/test_accuracy
+```
+
+## Examples
+
+### Solar System Simulation
+Accurate simulation of the solar system with real gravitational constant and units:
+```bash
+./build/bin/solar_system
+```
+
+### Million Particle Cloud
+Interactive visualization of 1-2 million particles:
+```bash
+./build/bin/million_particles
+```
+
+## Original Vision
+
+The long-term vision is to create a highly interactive and scalable sandbox space simulation game that can simulate vast numbers of "big atoms" interacting through various forces. Key goals include:
+
+- Simulating 10+ million particles with complex multi-star systems
+- Supporting concurrent players and AI bots for multiplayer experience
+- Providing a DSL for celestial mechanics
+- Enabling novel physics including relativistic effects and exotic phenomena
+- GPU acceleration with CUDA for maximum performance
+- Efficient spatial data structures (octrees, quadtrees)
+- RESTful and binary UDP interfaces for networking
+- Python integration for scripting and AI control
+- Shared memory IPC for high-frequency communication
+
+## Documentation
+
+- [Backend Architecture](docs/BACKENDS.md)
+- [Algorithm Details](docs/ALGORITHMS.md)
+- [Original Design Document](docs/design_document.md)
+
+## License
+
+MIT License - See LICENSE file for details
+
+## Contributing
+
+Contributions welcome! Please see CONTRIBUTING.md for guidelines.

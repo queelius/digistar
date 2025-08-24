@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <vector>
 #include <cstring>
+#include <cstdlib>
+#include <new>
 #include "types.h"
 
 namespace digistar {
@@ -30,11 +32,13 @@ public:
     // Material properties
     uint8_t* material_type = nullptr;
     float* charge = nullptr;
+    float* temperature = nullptr;  // External temperature (different from temp_internal)
     
     // Metadata
     uint32_t* particle_id = nullptr;
     uint32_t* composite_id = nullptr;  // Which composite this belongs to
     uint8_t* integrator_type = nullptr;  // Per-particle integration method
+    bool* alive = nullptr;  // Is particle active/alive
     
     // Grid tracking (which cell in each spatial index)
     uint64_t* grid_cells = nullptr;  // Packed: 16 bits per grid level
@@ -54,7 +58,9 @@ public:
         // Allocate aligned arrays for SIMD
         auto alloc_aligned = [](size_t size) {
             void* ptr = nullptr;
-            posix_memalign(&ptr, 64, size);  // 64-byte alignment for AVX-512
+            if (posix_memalign(&ptr, 64, size) != 0) {  // 64-byte alignment for AVX-512
+                throw std::bad_alloc();
+            }
             std::memset(ptr, 0, size);
             return ptr;
         };
@@ -69,11 +75,13 @@ public:
         radius = (float*)alloc_aligned(capacity * sizeof(float));
         temp_internal = (float*)alloc_aligned(capacity * sizeof(float));
         charge = (float*)alloc_aligned(capacity * sizeof(float));
+        temperature = (float*)alloc_aligned(capacity * sizeof(float));
         
         material_type = (uint8_t*)alloc_aligned(capacity * sizeof(uint8_t));
         particle_id = (uint32_t*)alloc_aligned(capacity * sizeof(uint32_t));
         composite_id = (uint32_t*)alloc_aligned(capacity * sizeof(uint32_t));
         integrator_type = (uint8_t*)alloc_aligned(capacity * sizeof(uint8_t));
+        alive = (bool*)alloc_aligned(capacity * sizeof(bool));
         grid_cells = (uint64_t*)alloc_aligned(capacity * sizeof(uint64_t));
         
         active_indices = (uint32_t*)alloc_aligned(capacity * sizeof(uint32_t));
@@ -82,6 +90,8 @@ public:
         for (size_t i = 0; i < capacity; ++i) {
             active_indices[i] = i;
             particle_id[i] = i;
+            alive[i] = false;  // Start with all particles inactive
+            temperature[i] = 293.0f;  // Room temperature default
         }
     }
     
@@ -96,10 +106,12 @@ public:
         free(radius); radius = nullptr;
         free(temp_internal); temp_internal = nullptr;
         free(charge); charge = nullptr;
+        free(temperature); temperature = nullptr;
         free(material_type); material_type = nullptr;
         free(particle_id); particle_id = nullptr;
         free(composite_id); composite_id = nullptr;
         free(integrator_type); integrator_type = nullptr;
+        free(alive); alive = nullptr;
         free(grid_cells); grid_cells = nullptr;
         free(active_indices); active_indices = nullptr;
         capacity = 0;
@@ -119,10 +131,12 @@ public:
         force_x[idx] = 0;
         force_y[idx] = 0;
         temp_internal[idx] = 293.0f;  // Room temperature
+        temperature[idx] = 293.0f;  // External temperature
         charge[idx] = 0;
         material_type[idx] = 0;
         composite_id[idx] = UINT32_MAX;  // Not in composite
         integrator_type[idx] = 0;  // Default integrator
+        alive[idx] = true;  // New particle is alive
         
         return idx;
     }
@@ -144,10 +158,12 @@ public:
     float* stiffness = nullptr;
     float* damping = nullptr;
     float* break_strain = nullptr;
+    float* max_strain = nullptr;  // Maximum allowed strain before breaking
     float* current_strain = nullptr;
     
     uint8_t* material_type = nullptr;
     uint8_t* is_broken = nullptr;
+    bool* alive = nullptr;  // Is spring active
     
     float* thermal_conductivity = nullptr;
     float* damage = nullptr;
@@ -162,7 +178,9 @@ public:
         
         auto alloc_aligned = [](size_t size) {
             void* ptr = nullptr;
-            posix_memalign(&ptr, 64, size);
+            if (posix_memalign(&ptr, 64, size) != 0) {
+                throw std::bad_alloc();
+            }
             std::memset(ptr, 0, size);
             return ptr;
         };
@@ -173,9 +191,11 @@ public:
         stiffness = (float*)alloc_aligned(capacity * sizeof(float));
         damping = (float*)alloc_aligned(capacity * sizeof(float));
         break_strain = (float*)alloc_aligned(capacity * sizeof(float));
+        max_strain = (float*)alloc_aligned(capacity * sizeof(float));
         current_strain = (float*)alloc_aligned(capacity * sizeof(float));
         material_type = (uint8_t*)alloc_aligned(capacity * sizeof(uint8_t));
         is_broken = (uint8_t*)alloc_aligned(capacity * sizeof(uint8_t));
+        alive = (bool*)alloc_aligned(capacity * sizeof(bool));
         thermal_conductivity = (float*)alloc_aligned(capacity * sizeof(float));
         damage = (float*)alloc_aligned(capacity * sizeof(float));
         
@@ -189,9 +209,11 @@ public:
         free(stiffness); stiffness = nullptr;
         free(damping); damping = nullptr;
         free(break_strain); break_strain = nullptr;
+        free(max_strain); max_strain = nullptr;
         free(current_strain); current_strain = nullptr;
         free(material_type); material_type = nullptr;
         free(is_broken); is_broken = nullptr;
+        free(alive); alive = nullptr;
         free(thermal_conductivity); thermal_conductivity = nullptr;
         free(damage); damage = nullptr;
         capacity = 0;
@@ -300,6 +322,8 @@ public:
 class CompositePool {
 public:
     // Composite properties
+    float* center_x = nullptr;  // Current center position
+    float* center_y = nullptr;
     float* center_of_mass_x = nullptr;
     float* center_of_mass_y = nullptr;
     float* velocity_x = nullptr;
@@ -307,6 +331,7 @@ public:
     float* angular_velocity = nullptr;
     float* total_mass = nullptr;
     float* bounding_radius = nullptr;
+    uint32_t* particle_count = nullptr;  // Number of particles in composite
     
     // Member tracking (variable length per composite)
     uint32_t* member_start = nullptr;  // Index into member_particles
@@ -325,11 +350,15 @@ public:
         
         auto alloc_aligned = [](size_t size) {
             void* ptr = nullptr;
-            posix_memalign(&ptr, 64, size);
+            if (posix_memalign(&ptr, 64, size) != 0) {
+                throw std::bad_alloc();
+            }
             std::memset(ptr, 0, size);
             return ptr;
         };
         
+        center_x = (float*)alloc_aligned(capacity * sizeof(float));
+        center_y = (float*)alloc_aligned(capacity * sizeof(float));
         center_of_mass_x = (float*)alloc_aligned(capacity * sizeof(float));
         center_of_mass_y = (float*)alloc_aligned(capacity * sizeof(float));
         velocity_x = (float*)alloc_aligned(capacity * sizeof(float));
@@ -337,6 +366,7 @@ public:
         angular_velocity = (float*)alloc_aligned(capacity * sizeof(float));
         total_mass = (float*)alloc_aligned(capacity * sizeof(float));
         bounding_radius = (float*)alloc_aligned(capacity * sizeof(float));
+        particle_count = (uint32_t*)alloc_aligned(capacity * sizeof(uint32_t));
         
         member_start = (uint32_t*)alloc_aligned(capacity * sizeof(uint32_t));
         member_count = (uint32_t*)alloc_aligned(capacity * sizeof(uint32_t));
@@ -344,6 +374,8 @@ public:
     }
     
     void deallocate() {
+        free(center_x); center_x = nullptr;
+        free(center_y); center_y = nullptr;
         free(center_of_mass_x); center_of_mass_x = nullptr;
         free(center_of_mass_y); center_of_mass_y = nullptr;
         free(velocity_x); velocity_x = nullptr;
@@ -351,6 +383,7 @@ public:
         free(angular_velocity); angular_velocity = nullptr;
         free(total_mass); total_mass = nullptr;
         free(bounding_radius); bounding_radius = nullptr;
+        free(particle_count); particle_count = nullptr;
         free(member_start); member_start = nullptr;
         free(member_count); member_count = nullptr;
         free(member_particles); member_particles = nullptr;
