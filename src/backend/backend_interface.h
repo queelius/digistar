@@ -16,6 +16,13 @@ struct SimulationStats {
     float contact_time_ms = 0;
     float spring_time_ms = 0;
     float integration_time_ms = 0;
+    float spatial_index_time = 0;
+    float collision_detection_time = 0;
+    float composite_detection_time = 0;
+    
+    // Aliases for consistency
+    float update_time = 0;  // Same as update_time_ms
+    float integrate_time = 0;  // Same as integration_time_ms
     
     // System metrics
     size_t active_particles = 0;
@@ -28,6 +35,7 @@ struct SimulationStats {
     float total_momentum_x = 0;
     float total_momentum_y = 0;
     float average_temperature = 0;
+    float max_velocity = 0;
 };
 
 // All simulation data in one place - easy to extend
@@ -87,6 +95,14 @@ struct PhysicsConfig {
     // Spring parameters  
     float spring_break_strain = 0.5f;
     float spring_formation_distance = 10.0f;
+    
+    // Integration method
+    enum IntegratorType {
+        VELOCITY_VERLET = 0,
+        SEMI_IMPLICIT = 1,
+        LEAPFROG = 2,
+        FORWARD_EULER = 3
+    } default_integrator = SEMI_IMPLICIT;
     
     // Performance hints
     bool prefer_accuracy = false;  // false = prefer speed

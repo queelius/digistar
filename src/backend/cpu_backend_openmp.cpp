@@ -128,10 +128,10 @@ void CpuBackendOpenMP::step(SimulationState& state, const PhysicsConfig& physics
     
     // Integrate positions and velocities
     switch (physics_config.default_integrator) {
-        case PhysicsConfig::VELOCITY_VERLET:
+        case PhysicsConfig::IntegratorType::VELOCITY_VERLET:
             integrateVelocityVerlet(state.particles, dt);
             break;
-        case PhysicsConfig::SEMI_IMPLICIT:
+        case PhysicsConfig::IntegratorType::SEMI_IMPLICIT:
             integrateSemiImplicit(state.particles, dt);
             break;
         default:

@@ -13,42 +13,63 @@ class Simulation {
 public:
     struct Config {
         // Simulation parameters
-        float timestep = 0.01f;
-        float target_fps = 60.0f;
-        bool fixed_timestep = true;
-        bool pause_on_start = false;
+        float timestep;
+        float target_fps;
+        bool fixed_timestep;
+        bool pause_on_start;
         
         // Physics configuration
         PhysicsConfig physics;
         
         // Backend selection
-        BackendFactory::Type backend_type = BackendFactory::Type::CPU;
+        BackendFactory::Type backend_type;
         
         // World setup
-        float world_size = 10000.0f;
-        bool use_toroidal = true;
+        float world_size;
+        bool use_toroidal;
         
         // Capacity limits
-        size_t max_particles = 100000;
-        size_t max_springs = 500000;
-        size_t max_contacts = 10000;
+        size_t max_particles;
+        size_t max_springs;
+        size_t max_contacts;
         
         // Scenario to load
-        std::string scenario_name = "default";
+        std::string scenario_name;
         
         // Rendering
-        bool enable_rendering = true;
-        bool use_ansi_colors = true;
+        bool enable_rendering;
+        bool use_ansi_colors;
         AsciiRenderer::Config renderer_config;
         
         // Logging
-        bool enable_logging = false;
-        std::string log_file = "simulation.log";
+        bool enable_logging;
+        std::string log_file;
         
         // Checkpointing
-        bool enable_checkpoints = false;
-        float checkpoint_interval = 60.0f;  // seconds
-        std::string checkpoint_dir = "./checkpoints";
+        bool enable_checkpoints;
+        float checkpoint_interval;
+        std::string checkpoint_dir;
+        
+        // Default constructor with initializations
+        Config() : 
+            timestep(0.01f),
+            target_fps(60.0f),
+            fixed_timestep(true),
+            pause_on_start(false),
+            backend_type(BackendFactory::Type::CPU),
+            world_size(10000.0f),
+            use_toroidal(true),
+            max_particles(100000),
+            max_springs(500000),
+            max_contacts(10000),
+            scenario_name("default"),
+            enable_rendering(true),
+            use_ansi_colors(true),
+            enable_logging(false),
+            log_file("simulation.log"),
+            enable_checkpoints(false),
+            checkpoint_interval(60.0f),
+            checkpoint_dir("./checkpoints") {}
     };
     
     enum class State {

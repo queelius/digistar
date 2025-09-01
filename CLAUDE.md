@@ -74,10 +74,54 @@ When modifying design docs:
 - Run `make` in docs/ to regenerate the combined document
 - Focus on clarity and feasibility - the design is ambitious and needs refinement
 
+## Current Implementation Status (Updated)
+
+### Active Development
+The project has moved beyond pure design phase with working implementations:
+- **Backend Architecture**: Unified around `IBackend` interface in `backend_interface.h`
+- **Examples**: Working solar system and particle simulations
+- **Physics Algorithms**: ParticleMesh (PM) and spatial indexing implemented
+- **Pool-based Memory**: Structure-of-Arrays design for SIMD optimization
+
+### Architecture Decisions
+- **NOT using Barnes-Hut**: We use Particle Mesh (PM) for gravity instead
+  - PM works perfectly with toroidal topology
+  - O(N log N) complexity with FFT
+  - Better cache locality than tree traversal
+- **Multi-resolution Spatial Grids**: Different grid sizes for different physics
+  - Contact detection: 2-4 units (fine)
+  - Spring formation: 10-20 units (medium)
+  - Thermal: 50-100 units (coarse)
+  - Radiation: 200-500 units (very coarse)
+- **Toroidal Topology**: All physics systems handle periodic boundaries
+
+### Backend Hierarchy
+```
+IBackend (backend_interface.h) - Main Interface
+├── CpuBackendSimple - Single-threaded for testing
+├── CpuBackendReference - Reference implementation
+├── CpuBackendOpenMP - Multi-threaded CPU
+└── CUDABackend - GPU (needs implementation)
+```
+
+### Build Commands
+```bash
+# Build main simulation
+make clean && make -j4
+
+# Build examples
+cd examples
+g++ -std=c++17 -O2 solar_system_simple.cpp -o solar_system
+
+# Run examples
+./solar_system
+```
+
 ## Important Notes
 
-- **Design Phase**: The project is primarily in design/documentation phase
-- **No Active Code**: There's no current implementation - focus on design docs
+- **Active Development**: Project has working code, not just design docs
+- **PM Focus**: Particle Mesh is the primary gravity algorithm, not Barnes-Hut
+- **Grid-based Spatial Indexing**: Multi-resolution grids, not octrees
 - **GPU Focus**: All physics planned for CUDA GPU acceleration
 - **Scale Goal**: Target 10+ million big atoms simultaneously
 - **Experimental Physics**: Novel physics models (black holes, warp channels, etc.)

@@ -86,10 +86,10 @@ void Simulation::initializeSimulationState() {
     sim_state->composites.allocate(config.max_particles / 10, config.max_particles);
     
     // Create spatial indices
-    sim_state->contact_index = std::make_unique<SparseGrid>(2.0f, config.world_size);
-    sim_state->spring_index = std::make_unique<SparseGrid>(10.0f, config.world_size);
-    sim_state->thermal_index = std::make_unique<SparseGrid>(50.0f, config.world_size);
-    sim_state->radiation_index = std::make_unique<SparseGrid>(200.0f, config.world_size);
+    sim_state->contact_index = std::make_unique<GridSpatialIndex>(config.world_size, 2.0f);
+    sim_state->spring_index = std::make_unique<GridSpatialIndex>(config.world_size, 10.0f);
+    sim_state->thermal_index = std::make_unique<GridSpatialIndex>(config.world_size, 50.0f);
+    sim_state->radiation_index = std::make_unique<GridSpatialIndex>(config.world_size, 200.0f);
     
     // Allocate field grids if needed
     if (config.physics.gravity_mode == PhysicsConfig::PARTICLE_MESH) {

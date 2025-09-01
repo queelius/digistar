@@ -101,7 +101,7 @@ void CpuBackendReference::step(SimulationState& state, const PhysicsConfig& phys
     stats.composite_detection_time = std::chrono::duration<float, std::milli>(t4 - t3).count();
     
     // 4. Store old forces if using Velocity Verlet
-    if (physics_config.default_integrator == PhysicsConfig::VELOCITY_VERLET) {
+    if (physics_config.default_integrator == PhysicsConfig::IntegratorType::VELOCITY_VERLET) {
         std::memcpy(old_force_x, state.particles.force_x, state.particles.count * sizeof(float));
         std::memcpy(old_force_y, state.particles.force_y, state.particles.count * sizeof(float));
     }
@@ -157,10 +157,10 @@ void CpuBackendReference::step(SimulationState& state, const PhysicsConfig& phys
     
     // 7. Integrate positions and velocities
     switch (physics_config.default_integrator) {
-        case PhysicsConfig::VELOCITY_VERLET:
+        case PhysicsConfig::IntegratorType::VELOCITY_VERLET:
             integrateVelocityVerlet(state.particles, dt);
             break;
-        case PhysicsConfig::SEMI_IMPLICIT:
+        case PhysicsConfig::IntegratorType::SEMI_IMPLICIT:
             integrateSemiImplicit(state.particles, dt);
             break;
         default:
@@ -411,8 +411,8 @@ void CpuBackendReference::computeContacts(ParticlePool& particles, ContactPool& 
         // Generate heat from collision
         if (v_normal > 0) {  // Only if compressing
             float heat_generated = 0.01f * damping * v_normal * v_normal * overlap;
-            particles.temp_internal[i] += heat_generated / (2.0f * particles.mass[i]);
-            particles.temp_internal[j] += heat_generated / (2.0f * particles.mass[j]);
+            particles.temperature[i] += heat_generated / (2.0f * particles.mass[i]);
+            particles.temperature[j] += heat_generated / (2.0f * particles.mass[j]);
         }
     }
 }
@@ -420,10 +420,10 @@ void CpuBackendReference::computeContacts(ParticlePool& particles, ContactPool& 
 void CpuBackendReference::computeSprings(ParticlePool& particles, SpringPool& springs) {
     // Process all active springs
     for (size_t s = 0; s < springs.count; s++) {
-        if (springs.is_broken[s]) continue;
+        if (!springs.active[s]) continue;
         
-        uint32_t i = springs.particle1[s];
-        uint32_t j = springs.particle2[s];
+        uint32_t i = springs.particle1_id[s];
+        uint32_t j = springs.particle2_id[s];
         
         // Vector from particle i to particle j
         float dx = particles.pos_x[j] - particles.pos_x[i];
@@ -442,7 +442,7 @@ void CpuBackendReference::computeSprings(ParticlePool& particles, SpringPool& sp
         
         // Calculate strain
         float strain = (distance - springs.rest_length[s]) / springs.rest_length[s];
-        springs.current_strain[s] = strain;
+        springs.strain[s] = strain;
         
         // Hooke's law: F = -k * Δx
         float spring_force = springs.stiffness[s] * (distance - springs.rest_length[s]);
@@ -467,35 +467,36 @@ void CpuBackendReference::computeSprings(ParticlePool& particles, SpringPool& sp
         
         // Accumulate damage if yielding
         if (fabsf(strain) > 0.2f) {  // Plastic deformation threshold
-            springs.damage[s] += fabsf(strain) * 0.01f;
+            // springs.damage[s] += fabsf(strain) * 0.01f;  // TODO: Add damage field if needed
         }
     }
 }
 
 void CpuBackendReference::checkSpringBreaking(SpringPool& springs, ParticlePool& particles) {
     for (size_t s = 0; s < springs.count; s++) {
-        if (springs.is_broken[s]) continue;
+        if (!springs.active[s]) continue;
         
         // Check strain limit
-        if (fabsf(springs.current_strain[s]) > springs.break_strain[s]) {
-            springs.is_broken[s] = 1;
+        if (fabsf(springs.strain[s]) > 2.0f) {  // Default break strain
+            springs.active[s] = 0;  // Mark as inactive
             
             // Release elastic energy as heat
             float energy = 0.5f * springs.stiffness[s] * 
-                          springs.current_strain[s] * springs.current_strain[s] * 
+                          springs.strain[s] * springs.strain[s] * 
                           springs.rest_length[s] * springs.rest_length[s];
             
-            uint32_t i = springs.particle1[s];
-            uint32_t j = springs.particle2[s];
+            uint32_t i = springs.particle1_id[s];
+            uint32_t j = springs.particle2_id[s];
             
-            particles.temp_internal[i] += energy / (2.0f * particles.mass[i]);
-            particles.temp_internal[j] += energy / (2.0f * particles.mass[j]);
+            particles.temperature[i] += energy / (2.0f * particles.mass[i]);
+            particles.temperature[j] += energy / (2.0f * particles.mass[j]);
         }
         
         // Check accumulated damage
-        if (springs.damage[s] > 1.0f) {
-            springs.is_broken[s] = 1;
-        }
+        // TODO: Add damage tracking if needed
+        // if (springs.damage[s] > 1.0f) {
+        //     springs.active[s] = 0;
+        // }
     }
 }
 
@@ -505,7 +506,7 @@ void CpuBackendReference::formNewSprings(ParticlePool& particles, SpringPool& sp
     
     // Check each particle's neighborhood
     for (size_t i = 0; i < particles.count; i++) {
-        auto neighbors = index.query_radius(particles.pos_x[i], particles.pos_y[i], 
+        auto neighbors = index.query(particles.pos_x[i], particles.pos_y[i], 
                                            formation_distance);
         
         for (uint32_t j : neighbors) {
@@ -514,8 +515,8 @@ void CpuBackendReference::formNewSprings(ParticlePool& particles, SpringPool& sp
             // Check if spring already exists
             bool exists = false;
             for (size_t s = 0; s < springs.count; s++) {
-                if ((springs.particle1[s] == i && springs.particle2[s] == j) ||
-                    (springs.particle1[s] == j && springs.particle2[s] == i)) {
+                if ((springs.particle1_id[s] == i && springs.particle2_id[s] == j) ||
+                    (springs.particle1_id[s] == j && springs.particle2_id[s] == i)) {
                     exists = true;
                     break;
                 }
@@ -550,7 +551,17 @@ void CpuBackendReference::formNewSprings(ParticlePool& particles, SpringPool& sp
                     damping = 2.0f;
                 }
                 
-                springs.add_spring(i, j, dist, stiffness, damping);
+                // TODO: Implement add_spring method or manually add
+                if (springs.count < springs.capacity) {
+                    size_t idx = springs.count++;
+                    springs.particle1_id[idx] = i;
+                    springs.particle2_id[idx] = j;
+                    springs.rest_length[idx] = dist;
+                    springs.stiffness[idx] = stiffness;
+                    springs.damping[idx] = damping;
+                    springs.strain[idx] = 0.0f;
+                    springs.active[idx] = 1;
+                }
             }
         }
     }
@@ -561,10 +572,10 @@ void CpuBackendReference::computeThermal(ParticlePool& particles, SpringPool& sp
     
     // Heat conduction through springs (Fourier's law)
     for (size_t s = 0; s < springs.count; s++) {
-        if (springs.is_broken[s]) continue;
+        if (!springs.active[s]) continue;
         
-        uint32_t i = springs.particle1[s];
-        uint32_t j = springs.particle2[s];
+        uint32_t i = springs.particle1_id[s];
+        uint32_t j = springs.particle2_id[s];
         
         float temp_diff = particles.temp_internal[j] - particles.temp_internal[i];
         
@@ -594,7 +605,7 @@ void CpuBackendReference::computeRadiation(ParticlePool& particles, RadiationFie
             particles.temp_internal[i] -= power * 0.01f / particles.mass[i];
             
             // Heat nearby particles (simplified - not physically accurate)
-            auto neighbors = index.query_radius(particles.pos_x[i], particles.pos_y[i], 100.0f);
+            auto neighbors = index.query(particles.pos_x[i], particles.pos_y[i], 100.0f);
             
             for (uint32_t j : neighbors) {
                 if (j == i) continue;
@@ -710,7 +721,7 @@ void CpuBackendReference::updateComposites(ParticlePool& particles, SpringPool& 
     // Unite particles connected by unbroken springs
     for (size_t s = 0; s < springs.count; s++) {
         if (!springs.is_broken[s]) {
-            uf.unite(springs.particle1[s], springs.particle2[s]);
+            uf.unite(springs.particle1_id[s], springs.particle2_id[s]);
         }
     }
     
@@ -759,21 +770,22 @@ void CpuBackendReference::updateComposites(ParticlePool& particles, SpringPool& 
         // Add composite to pool
         if (composites.count < composites.capacity) {
             size_t idx = composites.count++;
-            composites.center_of_mass_x[idx] = com_x;
-            composites.center_of_mass_y[idx] = com_y;
-            composites.velocity_x[idx] = vel_x;
-            composites.velocity_y[idx] = vel_y;
+            composites.center_x[idx] = com_x;
+            composites.center_y[idx] = com_y;
+            // composites.velocity_x[idx] = vel_x;  // TODO: Add velocity fields if needed
+            // composites.velocity_y[idx] = vel_y;
             composites.total_mass[idx] = total_mass;
-            composites.bounding_radius[idx] = max_radius;
-            composites.member_count[idx] = members.size();
+            // composites.bounding_radius[idx] = max_radius;  // TODO: Add bounding_radius field if needed
+            // member_count is redundant with particle_count
             
             // Copy member IDs
-            composites.member_start[idx] = composites.member_total;
+            composites.first_particle[idx] = composites.total_particles;
             for (uint32_t id : members) {
-                if (composites.member_total < composites.member_capacity) {
-                    composites.member_particles[composites.member_total++] = id;
+                if (composites.total_particles < composites.particle_capacity) {
+                    composites.particle_ids[composites.total_particles++] = id;
                 }
             }
+            composites.particle_count[idx] = members.size();
         }
     }
 }

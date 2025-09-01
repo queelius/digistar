@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <unordered_map>
 #include <limits>
-#include <stdexcept>
 #include "types.h"
 
 namespace digistar {
@@ -99,9 +98,6 @@ public:
         id_to_index_map.reserve(capacity);
         count = 0;
         next_id = 0;
-        
-        // Initialize backwards compatibility
-        init_backwards_compat();
     }
     
     void deallocate() {
@@ -118,7 +114,6 @@ public:
         free(material_type); material_type = nullptr;
         free(composite_id); composite_id = nullptr;
         free(index_to_id); index_to_id = nullptr;
-        free(active_indices); active_indices = nullptr;  // Free backwards compat array
         
         id_to_index_map.clear();
         capacity = 0;
@@ -265,18 +260,8 @@ public:
     }
     
     // For backwards compatibility with existing code
-    uint32_t* active_indices = nullptr;  // Points to simple [0,1,2,...] array
+    uint32_t* active_indices = nullptr;  // Not used in new design
     bool* alive = nullptr;  // Not used - all particles 0..count-1 are alive
-    
-    // Initialize backwards compatibility arrays in allocate()
-    void init_backwards_compat() {
-        if (!active_indices) {
-            active_indices = (uint32_t*)alloc_aligned(capacity * sizeof(uint32_t));
-            for (size_t i = 0; i < capacity; ++i) {
-                active_indices[i] = i;  // Simple identity mapping
-            }
-        }
-    }
 };
 
 // Spring pool - references particles by ID

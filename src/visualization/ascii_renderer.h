@@ -14,23 +14,39 @@ class AsciiRenderer {
 public:
     struct Config {
         // Display dimensions
-        size_t width = 120;        // Terminal columns
-        size_t height = 40;        // Terminal rows
+        size_t width;        // Terminal columns
+        size_t height;       // Terminal rows
         
         // Viewport (world coordinates)
-        float view_x = 0;          // Center X
-        float view_y = 0;          // Center Y
-        float view_scale = 100.0f; // World units per screen width
+        float view_x;          // Center X
+        float view_y;          // Center Y
+        float view_scale;      // World units per screen width
         
         // Display options
-        bool show_grid = false;
-        bool show_springs = true;
-        bool show_velocities = false;
-        bool show_forces = false;
-        bool show_temperature = false;
-        bool show_composites = true;
-        bool show_stats = true;
-        bool show_legend = true;
+        bool show_grid;
+        bool show_springs;
+        bool show_velocities;
+        bool show_forces;
+        bool show_temperature;
+        bool show_composites;
+        bool show_stats;
+        bool show_legend;
+        
+        // Default constructor
+        Config() :
+            width(120),
+            height(40),
+            view_x(0),
+            view_y(0),
+            view_scale(100.0f),
+            show_grid(false),
+            show_springs(true),
+            show_velocities(false),
+            show_forces(false),
+            show_temperature(false),
+            show_composites(true),
+            show_stats(true),
+            show_legend(true) {}
         
         // Tracking
         int32_t track_particle = -1;  // Auto-center on this particle

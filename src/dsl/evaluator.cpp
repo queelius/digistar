@@ -915,13 +915,13 @@ void DslEvaluator::createSpring(size_t p1, size_t p2, float stiffness,
     }
     
     size_t id = s.count++;
-    s.particle1[id] = p1;
-    s.particle2[id] = p2;
+    s.particle1_id[id] = p1;
+    s.particle2_id[id] = p2;
     s.stiffness[id] = stiffness;
     s.damping[id] = damping;
     s.rest_length[id] = rest_length;
-    s.max_strain[id] = 2.0;  // Default
-    s.alive[id] = true;
+    s.strain[id] = 0.0;  // Current strain
+    s.active[id] = true;
 }
 
 void DslEvaluator::createSpringMesh(const std::vector<size_t>& particles,
