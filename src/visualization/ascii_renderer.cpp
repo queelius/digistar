@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <chrono>
 #include <cstring>
+#include <iostream>
 
 namespace digistar {
 

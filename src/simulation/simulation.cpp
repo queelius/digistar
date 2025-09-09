@@ -253,7 +253,7 @@ void Simulation::handleCheckpointing() {
 uint32_t Simulation::addParticle(float x, float y, float vx, float vy, float mass, float radius) {
     if (!sim_state) return UINT32_MAX;
     
-    return sim_state->particles.add_particle(x, y, vx, vy, mass, radius);
+    return sim_state->particles.create(x, y, vx, vy, mass, radius);
 }
 
 void Simulation::removeParticle(uint32_t id) {
@@ -268,7 +268,7 @@ void Simulation::addSpring(uint32_t p1, uint32_t p2, float stiffness, float damp
     float dy = sim_state->particles.pos_y[p2] - sim_state->particles.pos_y[p1];
     float rest_length = sqrtf(dx * dx + dy * dy);
     
-    sim_state->springs.add_spring(p1, p2, rest_length, stiffness, damping);
+    sim_state->springs.create(p1, p2, rest_length, stiffness, damping);
 }
 
 void Simulation::breakSpring(uint32_t spring_id) {
@@ -329,13 +329,13 @@ bool Simulation::saveCheckpoint() {
 
 void ScenarioLoader::loadDefault(SimulationState& state) {
     // Simple two-body system
-    state.particles.add_particle(0, 0, 0, 0, 1e30, 100);      // Central mass
-    state.particles.add_particle(1000, 0, 0, 30, 1e24, 50);   // Orbiting body
+    state.particles.create(0, 0, 0, 0, 1e30, 100);      // Central mass
+    state.particles.create(1000, 0, 0, 30, 1e24, 50);   // Orbiting body
 }
 
 void ScenarioLoader::loadSolarSystem(SimulationState& state) {
     // Sun
-    state.particles.add_particle(0, 0, 0, 0, 1.989e30, 696340);
+    state.particles.create(0, 0, 0, 0, 1.989e30, 696340);
     
     // Planets (simplified circular orbits)
     struct Planet {
@@ -358,7 +358,7 @@ void ScenarioLoader::loadSolarSystem(SimulationState& state) {
     for (const auto& p : planets) {
         // Scale down distances for visualization
         float scaled_dist = p.distance / 1e7f;  // Scale factor
-        state.particles.add_particle(scaled_dist, 0, 0, p.velocity / 1000.0f, p.mass, p.radius);
+        state.particles.create(scaled_dist, 0, 0, p.velocity / 1000.0f, p.mass, p.radius);
     }
     
     // Add some asteroids
@@ -371,7 +371,7 @@ void ScenarioLoader::loadSolarSystem(SimulationState& state) {
         float vx = -v * sinf(angle);
         float vy = v * cosf(angle);
         
-        state.particles.add_particle(x, y, vx, vy, 1e16f, 1.0f);
+        state.particles.create(x, y, vx, vy, 1e16f, 1.0f);
     }
 }
 
@@ -385,7 +385,7 @@ void ScenarioLoader::loadAsteroidField(SimulationState& state) {
         float mass = 1e15f + rand() % (int)1e16f;
         float radius = cbrtf(mass / 1e15f);
         
-        uint32_t id = state.particles.add_particle(x, y, vx, vy, mass, radius);
+        uint32_t id = state.particles.create(x, y, vx, vy, mass, radius);
         state.particles.material_type[id] = MATERIAL_ROCK;
     }
 }
@@ -404,7 +404,7 @@ void ScenarioLoader::loadSpringNetwork(SimulationState& state) {
         for (int j = 0; j < grid_size; j++) {
             float x = (i - grid_size/2) * spacing;
             float y = (j - grid_size/2) * spacing;
-            particles[i][j] = state.particles.add_particle(x, y, 0, 0, mass, radius);
+            particles[i][j] = state.particles.create(x, y, 0, 0, mass, radius);
         }
     }
     
@@ -413,17 +413,17 @@ void ScenarioLoader::loadSpringNetwork(SimulationState& state) {
         for (int j = 0; j < grid_size; j++) {
             // Right neighbor
             if (i < grid_size - 1) {
-                state.springs.add_spring(particles[i][j], particles[i+1][j], 
+                state.springs.create(particles[i][j], particles[i+1][j], 
                                         spacing, 100.0f, 1.0f);
             }
             // Bottom neighbor
             if (j < grid_size - 1) {
-                state.springs.add_spring(particles[i][j], particles[i][j+1], 
+                state.springs.create(particles[i][j], particles[i][j+1], 
                                         spacing, 100.0f, 1.0f);
             }
             // Diagonal
             if (i < grid_size - 1 && j < grid_size - 1) {
-                state.springs.add_spring(particles[i][j], particles[i+1][j+1], 
+                state.springs.create(particles[i][j], particles[i+1][j+1], 
                                         spacing * sqrtf(2), 50.0f, 0.5f);
             }
         }
@@ -438,7 +438,7 @@ void ScenarioLoader::loadCompositeTest(SimulationState& state) {
         for (int j = 0; j < 5; j++) {
             float x = -100 + i * 10;
             float y = j * 10;
-            uint32_t id = state.particles.add_particle(x, y, 20, 0, 10, 3);
+            uint32_t id = state.particles.create(x, y, 20, 0, 10, 3);
             state.particles.material_type[id] = MATERIAL_METAL;
         }
     }
@@ -451,7 +451,7 @@ void ScenarioLoader::loadCompositeTest(SimulationState& state) {
             float dist = sqrtf(dx * dx + dy * dy);
             
             if (dist < 15) {  // Only nearby particles
-                state.springs.add_spring(i, j, dist, 500, 5);
+                state.springs.create(i, j, dist, 500, 5);
             }
         }
     }
@@ -461,7 +461,7 @@ void ScenarioLoader::loadCompositeTest(SimulationState& state) {
         for (int j = 0; j < 5; j++) {
             float x = 100 + i * 10;
             float y = j * 10;
-            uint32_t id = state.particles.add_particle(x, y, -20, 0, 10, 3);
+            uint32_t id = state.particles.create(x, y, -20, 0, 10, 3);
             state.particles.material_type[id] = MATERIAL_ORGANIC;
         }
     }
@@ -474,7 +474,7 @@ void ScenarioLoader::loadCompositeTest(SimulationState& state) {
             float dist = sqrtf(dx * dx + dy * dy);
             
             if (dist < 15) {
-                state.springs.add_spring(i, j, dist, 50, 1);
+                state.springs.create(i, j, dist, 50, 1);
             }
         }
     }
@@ -485,9 +485,9 @@ void ScenarioLoader::loadGalaxyCollision(SimulationState& state) {
     
     auto createGalaxy = [&state](float cx, float cy, float vx, float vy, int num_stars) {
         // Central black hole
-        uint32_t center = state.particles.add_particle(cx, cy, vx, vy, 1e36, 10);
+        uint32_t center = state.particles.create(cx, cy, vx, vy, 1e36, 10);
         state.particles.material_type[center] = MATERIAL_PLASMA;
-        state.particles.temp_internal[center] = 1e7;  // Very hot
+        state.particles.temperature[center] = 1e7;  // Very hot
         
         // Spiral arms
         for (int i = 0; i < num_stars; i++) {
@@ -506,10 +506,11 @@ void ScenarioLoader::loadGalaxyCollision(SimulationState& state) {
             float v_tan_x = -v_orbit * sinf(angle) + vx;
             float v_tan_y = v_orbit * cosf(angle) + vy;
             
-            uint32_t star = state.particles.add_particle(x, y, v_tan_x, v_tan_y, 
-                                                         1e29 + rand() % (int)1e30, 5);
-            state.particles.material_type[star] = MATERIAL_PLASMA;
-            state.particles.temp_internal[star] = 5000 + rand() % 5000;
+            uint32_t star = state.particles.create(x, y, v_tan_x, v_tan_y, 
+                                                   1e29 + rand() % (int)1e30, 5);
+            uint32_t idx = state.particles.get_index(star);
+            state.particles.material_type[idx] = MATERIAL_PLASMA;
+            state.particles.temperature[idx] = 5000 + rand() % 5000;
         }
     };
     
@@ -528,7 +529,7 @@ void ScenarioLoader::loadStressTest(SimulationState& state, size_t particle_coun
         float mass = 1.0f + rand() % 100;
         float radius = 1.0f + rand() % 5;
         
-        state.particles.add_particle(x, y, vx, vy, mass, radius);
+        state.particles.create(x, y, vx, vy, mass, radius);
     }
 }
 

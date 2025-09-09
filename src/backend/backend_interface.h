@@ -6,6 +6,12 @@
 #include "../physics/pools.h"
 #include "../physics/spatial_index.h"
 
+// Forward declarations for event system
+namespace digistar {
+class EventProducer;
+class PhysicsEventEmitter;
+}
+
 namespace digistar {
 
 // Simulation statistics
@@ -82,8 +88,7 @@ struct PhysicsConfig {
     // Gravity parameters
     enum GravityMode {
         DIRECT_N2,      // O(N²) for small systems
-        PARTICLE_MESH,  // FFT-based for large systems
-        BARNES_HUT      // Tree-based (future)
+        PARTICLE_MESH   // FFT-based for large systems
     } gravity_mode = PARTICLE_MESH;
     
     float gravity_strength = 6.67430e-11f;  // Gravitational constant
@@ -131,6 +136,11 @@ struct SimulationConfig {
     // Threading hints
     size_t num_threads = 0;  // 0 = auto-detect
     bool enable_simd = true;
+    
+    // Event system configuration
+    bool enable_events = true;                ///< Enable event generation
+    std::string event_shm_name = "";          ///< Shared memory name (empty = auto-generate)
+    bool create_event_buffer = true;          ///< True if backend should create event buffer
 };
 
 // Abstract backend interface - minimal and focused
@@ -154,6 +164,52 @@ public:
     // Backend capabilities query
     virtual uint32_t getSupportedSystems() const = 0;
     virtual size_t getMaxParticles() const = 0;
+    
+    // Event system integration (optional - backends may not support events)
+    
+    /**
+     * Set event producer for this backend
+     * If the backend supports event generation, it will use this producer
+     * to emit physics events during simulation.
+     * 
+     * @param producer Shared pointer to event producer (may be null to disable events)
+     */
+    virtual void setEventProducer(std::shared_ptr<EventProducer> producer) {
+        // Default implementation does nothing - backends can override if they support events
+        (void)producer;  // Suppress unused parameter warning
+    }
+    
+    /**
+     * Get the event producer currently used by this backend
+     * 
+     * @return Event producer pointer, or nullptr if not set or not supported
+     */
+    virtual std::shared_ptr<EventProducer> getEventProducer() const {
+        return nullptr;  // Default implementation returns null
+    }
+    
+    /**
+     * Check if this backend supports event generation
+     * 
+     * @return true if backend can generate physics events
+     */
+    virtual bool supportsEvents() const {
+        return false;  // Default implementation doesn't support events
+    }
+    
+    /**
+     * Set current simulation tick and time for event context
+     * Backends that support events should call this before each simulation step
+     * to ensure events have correct timing information.
+     * 
+     * @param tick Current simulation tick number
+     * @param timestamp Current simulation time in seconds
+     */
+    virtual void setSimulationContext(uint32_t tick, float timestamp) {
+        // Default implementation does nothing
+        (void)tick;
+        (void)timestamp;
+    }
 };
 
 

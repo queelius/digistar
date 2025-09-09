@@ -294,6 +294,7 @@ public:
     // Runtime state
     float* current_length = nullptr;  // Cached for performance
     float* strain = nullptr;          // (current - rest) / rest
+    float* thermal_conductivity = nullptr;  // Thermal conductivity of spring
     bool* active = nullptr;           // Is spring active?
     
     size_t capacity = 0;
@@ -317,6 +318,7 @@ public:
         damping = (float*)alloc(capacity * sizeof(float));
         current_length = (float*)alloc(capacity * sizeof(float));
         strain = (float*)alloc(capacity * sizeof(float));
+        thermal_conductivity = (float*)alloc(capacity * sizeof(float));
         active = (bool*)alloc(capacity * sizeof(bool));
         
         count = 0;
@@ -330,6 +332,7 @@ public:
         free(damping); damping = nullptr;
         free(current_length); current_length = nullptr;
         free(strain); strain = nullptr;
+        free(thermal_conductivity); thermal_conductivity = nullptr;
         free(active); active = nullptr;
         capacity = 0;
         count = 0;
@@ -346,6 +349,7 @@ public:
         damping[idx] = damp;
         current_length[idx] = rest;
         strain[idx] = 0;
+        thermal_conductivity[idx] = 1.0f;  // Default thermal conductivity
         active[idx] = true;
         
         return idx;
@@ -355,6 +359,10 @@ public:
         if (idx < count) {
             active[idx] = false;
         }
+    }
+    
+    void break_spring(uint32_t idx) {
+        deactivate(idx);
     }
     
     // Compact to remove inactive springs (call periodically)

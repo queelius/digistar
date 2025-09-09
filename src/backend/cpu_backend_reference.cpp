@@ -120,9 +120,6 @@ void CpuBackendReference::step(SimulationState& state, const PhysicsConfig& phys
             case PhysicsConfig::PARTICLE_MESH:
                 computeGravityPM(state.particles, state.gravity);
                 break;
-            case PhysicsConfig::BARNES_HUT:
-                computeGravityBarnesHut(state.particles);
-                break;
         }
     }
     
@@ -370,11 +367,6 @@ void CpuBackendReference::computeGravityPM(ParticlePool& particles, GravityField
     }
 }
 
-void CpuBackendReference::computeGravityBarnesHut(ParticlePool& particles) {
-    // TODO: Implement Barnes-Hut tree algorithm
-    // For now, fall back to direct
-    computeGravityDirect(particles);
-}
 
 void CpuBackendReference::computeContacts(ParticlePool& particles, ContactPool& contacts) {
     const float k_contact = 1000.0f;  // Contact stiffness
@@ -577,14 +569,14 @@ void CpuBackendReference::computeThermal(ParticlePool& particles, SpringPool& sp
         uint32_t i = springs.particle1_id[s];
         uint32_t j = springs.particle2_id[s];
         
-        float temp_diff = particles.temp_internal[j] - particles.temp_internal[i];
+        float temp_diff = particles.temperature[j] - particles.temperature[i];
         
         // Q = k * A * ΔT / L
         float heat_flow = springs.thermal_conductivity[s] * temp_diff * dt / springs.rest_length[s];
         
         // Update temperatures
-        particles.temp_internal[i] += heat_flow / particles.mass[i];
-        particles.temp_internal[j] -= heat_flow / particles.mass[j];
+        particles.temperature[i] += heat_flow / particles.mass[i];
+        particles.temperature[j] -= heat_flow / particles.mass[j];
     }
 }
 
@@ -594,15 +586,15 @@ void CpuBackendReference::computeRadiation(ParticlePool& particles, RadiationFie
     const float emissivity = 0.8f;
     
     for (size_t i = 0; i < particles.count; i++) {
-        if (particles.temp_internal[i] > 300.0f) {  // Only radiate if hot
+        if (particles.temperature[i] > 300.0f) {  // Only radiate if hot
             // Stefan-Boltzmann law: P = ε * σ * A * T^4
             // In 2D, use T^3 instead
             float power = emissivity * stefan_boltzmann * 
-                         powf(particles.temp_internal[i], 3.0f) * 
+                         powf(particles.temperature[i], 3.0f) * 
                          particles.radius[i] * 2.0f * M_PI;
             
             // Cool the emitting particle
-            particles.temp_internal[i] -= power * 0.01f / particles.mass[i];
+            particles.temperature[i] -= power * 0.01f / particles.mass[i];
             
             // Heat nearby particles (simplified - not physically accurate)
             auto neighbors = index.query(particles.pos_x[i], particles.pos_y[i], 100.0f);
@@ -617,7 +609,7 @@ void CpuBackendReference::computeRadiation(ParticlePool& particles, RadiationFie
                 if (dist2 > 1.0f) {
                     // Intensity falls off with 1/r in 2D
                     float received_power = power / (2.0f * M_PI * sqrtf(dist2));
-                    particles.temp_internal[j] += received_power * 0.01f / particles.mass[j];
+                    particles.temperature[j] += received_power * 0.01f / particles.mass[j];
                 }
             }
         }

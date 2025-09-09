@@ -5,6 +5,18 @@ CXXFLAGS = -std=c++17 -O3 -march=native -fopenmp -Wall
 NVCCFLAGS = -std=c++17 -O3 -arch=sm_60
 LDFLAGS = -lm -fopenmp -lfftw3f -pthread
 
+# Check for SDL2 (optional graphics viewer)
+SDL2_FOUND := $(shell pkg-config --exists sdl2 && echo yes)
+ifeq ($(SDL2_FOUND),yes)
+    SDL2_CFLAGS := $(shell pkg-config --cflags sdl2)
+    SDL2_LIBS := $(shell pkg-config --libs sdl2)
+    CXXFLAGS += $(SDL2_CFLAGS) -DDIGISTAR_HAS_GRAPHICS_VIEWER
+    LDFLAGS += $(SDL2_LIBS)
+    $(info SDL2 found - graphics viewer will be built)
+else
+    $(warning SDL2 not found - graphics viewer will be disabled)
+endif
+
 # Directories
 SRC_DIR = src
 BUILD_DIR = build
@@ -25,11 +37,20 @@ SIMULATION_OBJS = $(OBJ_DIR)/main.o \
                   $(OBJ_DIR)/cpu_backend_openmp.o \
                   $(OBJ_DIR)/ascii_renderer.o
 
+# Graphics viewer objects (only if SDL2 available)
+ifeq ($(SDL2_FOUND),yes)
+    GRAPHICS_VIEWER_OBJS = $(OBJ_DIR)/graphics_viewer.o \
+                          $(OBJ_DIR)/viewer_event_bridge.o
+    SIMULATION_OBJS += $(GRAPHICS_VIEWER_OBJS)
+endif
+
 # DSL and Command Queue objects
 DSL_OBJS = $(OBJ_DIR)/sexpr.o \
            $(OBJ_DIR)/evaluator.o \
            $(OBJ_DIR)/command.o \
-           $(OBJ_DIR)/core_simulation.o
+           $(OBJ_DIR)/core_simulation.o \
+           $(OBJ_DIR)/thread_pool.o \
+           $(OBJ_DIR)/script_manager.o
 
 # Backend objects (old - for compatibility)
 BACKEND_OBJS = $(OBJ_DIR)/SimpleBackend.o \
@@ -62,6 +83,15 @@ $(OBJ_DIR)/cpu_backend_openmp.o: $(SRC_DIR)/backend/cpu_backend_openmp.cpp
 $(OBJ_DIR)/ascii_renderer.o: $(SRC_DIR)/visualization/ascii_renderer.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+# Graphics viewer object compilation (only if SDL2 available)
+ifeq ($(SDL2_FOUND),yes)
+$(OBJ_DIR)/graphics_viewer.o: $(SRC_DIR)/viewer/graphics_viewer.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/viewer_event_bridge.o: $(SRC_DIR)/viewer/viewer_event_bridge.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+endif
+
 # Backends (old - for compatibility)
 backends: $(BACKEND_OBJS)
 
@@ -91,10 +121,8 @@ $(OBJ_DIR)/core_simulation.o: $(SRC_DIR)/core/simulation.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Tests
-tests: $(BIN_DIR)/test_algorithms $(BIN_DIR)/test_convergence $(BIN_DIR)/test_accuracy $(BIN_DIR)/test_dsl $(BIN_DIR)/test_command_queue
+tests: $(BIN_DIR)/test_convergence $(BIN_DIR)/test_accuracy $(BIN_DIR)/test_dsl $(BIN_DIR)/test_command_queue $(BIN_DIR)/test_thread_pool
 
-$(BIN_DIR)/test_algorithms: $(TEST_DIR)/unit/test_algorithms.cpp $(BACKEND_OBJS)
-	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 $(BIN_DIR)/test_convergence: $(TEST_DIR)/integration/test_convergence.cpp $(BACKEND_OBJS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
@@ -108,6 +136,15 @@ $(BIN_DIR)/test_dsl: $(TEST_DIR)/test_dsl.cpp $(DSL_OBJS)
 $(BIN_DIR)/test_command_queue: $(TEST_DIR)/test_command_queue.cpp $(DSL_OBJS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) -lgtest -lgtest_main
 
+$(BIN_DIR)/test_thread_pool: $(TEST_DIR)/test_thread_pool.cpp $(DSL_OBJS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) -lgtest -lgtest_main
+
+$(OBJ_DIR)/thread_pool.o: $(SRC_DIR)/dsl/thread_pool.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/script_manager.o: $(SRC_DIR)/dsl/script_manager.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 # Benchmarks
 benchmarks: $(BIN_DIR)/benchmark_backends $(BIN_DIR)/benchmark_million
 
@@ -118,13 +155,26 @@ $(BIN_DIR)/benchmark_million: $(BENCH_DIR)/benchmark_million.cpp $(BACKEND_OBJS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 # Examples
+ifeq ($(SDL2_FOUND),yes)
+examples: $(BIN_DIR)/solar_system $(BIN_DIR)/million_particles $(BIN_DIR)/simple_graphics_test $(BIN_DIR)/graphics_viewer_demo
+else
 examples: $(BIN_DIR)/solar_system $(BIN_DIR)/million_particles
+endif
 
 $(BIN_DIR)/solar_system: $(EXAMPLE_DIR)/solar_system.cpp $(BACKEND_OBJS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 $(BIN_DIR)/million_particles: $(EXAMPLE_DIR)/million_particles.cpp $(BACKEND_OBJS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
+# Graphics viewer examples (only if SDL2 available)
+ifeq ($(SDL2_FOUND),yes)
+$(BIN_DIR)/simple_graphics_test: $(EXAMPLE_DIR)/simple_graphics_test.cpp $(SIMULATION_OBJS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
+$(BIN_DIR)/graphics_viewer_demo: $(EXAMPLE_DIR)/graphics_viewer_demo.cpp $(SIMULATION_OBJS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+endif
 
 # Tools
 tools: $(BIN_DIR)/backend_comparison

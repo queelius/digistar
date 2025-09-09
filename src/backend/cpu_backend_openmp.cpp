@@ -368,8 +368,8 @@ void CpuBackendOpenMP::computeSprings(ParticlePool& particles, SpringPool& sprin
             springs.is_broken[s] = 1;
             // Energy release as heat
             float energy = 0.5f * springs.stiffness[s] * strain * strain;
-            particles.temp_internal[i] += energy / (2 * particles.mass[i]);
-            particles.temp_internal[j] += energy / (2 * particles.mass[j]);
+            particles.temperature[i] += energy / (2 * particles.mass[i]);
+            particles.temperature[j] += energy / (2 * particles.mass[j]);
             continue;
         }
         

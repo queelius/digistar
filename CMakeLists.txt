@@ -33,6 +33,20 @@ find_package(PkgConfig REQUIRED)
 # FFTW3
 pkg_check_modules(FFTW3 REQUIRED fftw3f)
 
+# SDL2 for graphics viewer
+find_package(SDL2 QUIET)
+if(NOT SDL2_FOUND)
+    pkg_check_modules(SDL2 QUIET sdl2)
+endif()
+
+if(SDL2_FOUND)
+    message(STATUS "Found SDL2, graphics viewer will be built")
+    set(BUILD_GRAPHICS_VIEWER ON)
+else()
+    message(WARNING "SDL2 not found, graphics viewer will be disabled")
+    set(BUILD_GRAPHICS_VIEWER OFF)
+endif()
+
 # OpenMP
 if(USE_OPENMP)
     find_package(OpenMP)
@@ -77,6 +91,11 @@ set(DSL_SOURCES
     src/dsl/sexpr.cpp
     src/dsl/evaluator.cpp
     src/dsl/command.cpp
+    src/dsl/pattern_matcher.cpp
+    src/dsl/procedural_generator.cpp
+    src/dsl/event_bridge.cpp
+    src/dsl/script_manager.cpp
+    src/dsl/thread_pool.cpp
 )
 
 set(BACKEND_SOURCES
@@ -92,6 +111,20 @@ set(SIMULATION_SOURCES
 
 set(RENDERING_SOURCES
     src/visualization/ascii_renderer.cpp
+)
+
+# Graphics viewer sources (only if SDL2 is available)
+if(BUILD_GRAPHICS_VIEWER)
+    set(GRAPHICS_VIEWER_SOURCES
+        src/viewer/graphics_viewer.cpp
+        src/viewer/viewer_event_bridge.cpp
+    )
+endif()
+
+set(EVENT_SOURCES
+    src/events/event_system.cpp
+    src/events/event_producer.cpp
+    src/events/event_consumer.cpp
 )
 
 # Libraries
@@ -121,16 +154,42 @@ target_link_libraries(digistar_simulation PUBLIC
 add_library(digistar_rendering STATIC ${RENDERING_SOURCES})
 target_link_libraries(digistar_rendering PUBLIC digistar_core)
 
+# Graphics viewer library (optional)
+if(BUILD_GRAPHICS_VIEWER)
+    add_library(digistar_viewer STATIC ${GRAPHICS_VIEWER_SOURCES})
+    target_link_libraries(digistar_viewer PUBLIC 
+        digistar_core
+        digistar_events
+        ${SDL2_LIBRARIES}
+    )
+    target_include_directories(digistar_viewer PUBLIC ${SDL2_INCLUDE_DIRS})
+    target_compile_definitions(digistar_viewer PUBLIC DIGISTAR_HAS_GRAPHICS_VIEWER)
+endif()
+
+add_library(digistar_events STATIC ${EVENT_SOURCES})
+target_link_libraries(digistar_events PUBLIC 
+    digistar_core
+    Threads::Threads
+)
+
 # Main executable
 add_executable(digistar src/main.cpp)
-target_link_libraries(digistar 
+set(DIGISTAR_LIBRARIES
     digistar_simulation
     digistar_backend
     digistar_rendering
+    digistar_events
     digistar_dsl
     ${FFTW3_LIBRARIES}
     Threads::Threads
 )
+
+# Add graphics viewer library if available
+if(BUILD_GRAPHICS_VIEWER)
+    list(APPEND DIGISTAR_LIBRARIES digistar_viewer)
+endif()
+
+target_link_libraries(digistar ${DIGISTAR_LIBRARIES})
 
 # Tests
 if(BUILD_TESTS)
@@ -141,6 +200,15 @@ endif()
 # Examples
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
+    
+    # Graphics viewer examples (only if SDL2 available)
+    if(BUILD_GRAPHICS_VIEWER)
+        add_executable(simple_graphics_test examples/simple_graphics_test.cpp)
+        target_link_libraries(simple_graphics_test ${DIGISTAR_LIBRARIES})
+        
+        add_executable(graphics_viewer_demo examples/graphics_viewer_demo.cpp)
+        target_link_libraries(graphics_viewer_demo ${DIGISTAR_LIBRARIES})
+    endif()
 endif()
 
 # Benchmarks
@@ -161,13 +229,17 @@ install(DIRECTORY src/
 # Print configuration
 message(STATUS "")
 message(STATUS "DigiStar Configuration:")
-message(STATUS "  Build type:        ${CMAKE_BUILD_TYPE}")
-message(STATUS "  C++ compiler:      ${CMAKE_CXX_COMPILER}")
-message(STATUS "  C++ flags:         ${CMAKE_CXX_FLAGS}")
-message(STATUS "  Build tests:       ${BUILD_TESTS}")
-message(STATUS "  Build examples:    ${BUILD_EXAMPLES}")
-message(STATUS "  Build benchmarks:  ${BUILD_BENCHMARKS}")
-message(STATUS "  Use OpenMP:        ${USE_OPENMP}")
-message(STATUS "  Use CUDA:          ${USE_CUDA}")
-message(STATUS "  FFTW3:             ${FFTW3_LIBRARIES}")
+message(STATUS "  Build type:          ${CMAKE_BUILD_TYPE}")
+message(STATUS "  C++ compiler:        ${CMAKE_CXX_COMPILER}")
+message(STATUS "  C++ flags:           ${CMAKE_CXX_FLAGS}")
+message(STATUS "  Build tests:         ${BUILD_TESTS}")
+message(STATUS "  Build examples:      ${BUILD_EXAMPLES}")
+message(STATUS "  Build benchmarks:    ${BUILD_BENCHMARKS}")
+message(STATUS "  Graphics viewer:     ${BUILD_GRAPHICS_VIEWER}")
+message(STATUS "  Use OpenMP:          ${USE_OPENMP}")
+message(STATUS "  Use CUDA:            ${USE_CUDA}")
+message(STATUS "  FFTW3:               ${FFTW3_LIBRARIES}")
+if(BUILD_GRAPHICS_VIEWER)
+    message(STATUS "  SDL2:                ${SDL2_LIBRARIES}")
+endif()
 message(STATUS "")

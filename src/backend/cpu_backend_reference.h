@@ -29,7 +29,6 @@ private:
     // Internal methods for force computation - simple and clear
     void computeGravityDirect(ParticlePool& particles);
     void computeGravityPM(ParticlePool& particles, GravityField& field);
-    void computeGravityBarnesHut(ParticlePool& particles);  // Future
     
     void computeContacts(ParticlePool& particles, ContactPool& contacts);
     void computeSprings(ParticlePool& particles, SpringPool& springs);

@@ -1,0 +1,282 @@
+# DigiStar Integrated Simulation System Makefile
+# 
+# This Makefile builds the integrated simulation system with all components:
+# - Physics backends
+# - Event system
+# - DSL runtime
+# - Configuration management
+# - Command-line interface
+
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -g
+INCLUDES = -I./src -I./build -I/usr/include/gtest
+LIBS = -lpthread -lgtest -lgtest_main
+
+# Source directories
+SRC_DIR = src
+BUILD_DIR = build
+TEST_DIR = tests
+EXAMPLES_DIR = examples
+
+# Main source files for integrated simulation
+SIMULATION_SOURCES = \
+	$(SRC_DIR)/simulation/integrated_simulation.cpp \
+	$(SRC_DIR)/simulation/simulation_builder.cpp \
+	$(SRC_DIR)/simulation/physics_pipeline.cpp \
+	$(SRC_DIR)/config/simulation_config.cpp
+
+# Backend sources
+BACKEND_SOURCES = \
+	$(SRC_DIR)/backend/cpu_backend_simple.cpp \
+	$(SRC_DIR)/backend/cpu_backend_openmp.cpp \
+	$(SRC_DIR)/backend/cpu_backend_reference.cpp
+
+# Event system sources
+EVENT_SOURCES = \
+	$(SRC_DIR)/events/event_system.cpp \
+	$(SRC_DIR)/events/event_producer.cpp \
+	$(SRC_DIR)/events/event_consumer.cpp
+
+# DSL sources
+DSL_SOURCES = \
+	$(SRC_DIR)/dsl/sexpr.cpp \
+	$(SRC_DIR)/dsl/evaluator.cpp \
+	$(SRC_DIR)/dsl/pattern_matcher.cpp \
+	$(SRC_DIR)/dsl/procedural_generator.cpp \
+	$(SRC_DIR)/dsl/bytecode_compiler.cpp \
+	$(SRC_DIR)/dsl/bytecode_vm.cpp \
+	$(SRC_DIR)/dsl/event_bridge.cpp
+
+# Physics sources
+PHYSICS_SOURCES = \
+	$(SRC_DIR)/physics/pools.cpp
+
+# Core sources
+CORE_SOURCES = \
+	$(SRC_DIR)/core/simulation.cpp
+
+# All library sources
+LIB_SOURCES = \
+	$(SIMULATION_SOURCES) \
+	$(BACKEND_SOURCES) \
+	$(EVENT_SOURCES) \
+	$(DSL_SOURCES) \
+	$(PHYSICS_SOURCES) \
+	$(CORE_SOURCES)
+
+# Object files
+LIB_OBJECTS = $(LIB_SOURCES:.cpp=.o)
+MAIN_OBJECT = $(SRC_DIR)/main.o
+
+# Test sources
+TEST_SOURCES = \
+	$(TEST_DIR)/test_integrated_simulation.cpp \
+	$(TEST_DIR)/test_physics_pipeline.cpp
+
+TEST_OBJECTS = $(TEST_SOURCES:.cpp=.o)
+
+# Example sources
+EXAMPLE_SOURCES = \
+	$(EXAMPLES_DIR)/integrated_demo.cpp \
+	$(EXAMPLES_DIR)/galaxy_formation.cpp
+
+# Executables
+MAIN_EXECUTABLE = digistar
+TEST_EXECUTABLE = test_integrated
+DEMO_EXECUTABLE = integrated_demo
+GALAXY_EXECUTABLE = galaxy_formation
+
+# Default target
+all: $(MAIN_EXECUTABLE) examples tests
+
+# Main executable
+$(MAIN_EXECUTABLE): $(MAIN_OBJECT) $(LIB_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+
+# Test executable
+$(TEST_EXECUTABLE): $(TEST_OBJECTS) $(LIB_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+
+# Example executables
+$(DEMO_EXECUTABLE): $(EXAMPLES_DIR)/integrated_demo.o $(LIB_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+
+$(GALAXY_EXECUTABLE): $(EXAMPLES_DIR)/galaxy_formation.o $(LIB_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+
+# Object file compilation
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+# Phony targets
+.PHONY: all clean tests examples run-tests run-demo run-galaxy help
+
+# Build all examples
+examples: $(DEMO_EXECUTABLE) $(GALAXY_EXECUTABLE)
+
+# Build all tests
+tests: $(TEST_EXECUTABLE)
+
+# Run tests
+run-tests: $(TEST_EXECUTABLE)
+	./$(TEST_EXECUTABLE)
+
+# Run integrated demo
+run-demo: $(DEMO_EXECUTABLE)
+	./$(DEMO_EXECUTABLE) --verbose --time 30
+
+# Run galaxy formation example
+run-galaxy: $(GALAXY_EXECUTABLE)
+	./$(GALAXY_EXECUTABLE) --particles 10000 --time 60
+
+# Run main program with help
+run-help: $(MAIN_EXECUTABLE)
+	./$(MAIN_EXECUTABLE) --help
+
+# Run main program with minimal preset
+run-minimal: $(MAIN_EXECUTABLE)
+	./$(MAIN_EXECUTABLE) --preset minimal --batch --time 10 --verbose
+
+# Run benchmark
+run-benchmark: $(MAIN_EXECUTABLE)
+	./$(MAIN_EXECUTABLE) --benchmark --particles 10000 --benchmark-iterations 100
+
+# Clean build artifacts
+clean:
+	rm -f $(LIB_OBJECTS) $(MAIN_OBJECT) $(TEST_OBJECTS)
+	rm -f $(EXAMPLES_DIR)/*.o
+	rm -f $(MAIN_EXECUTABLE) $(TEST_EXECUTABLE) $(DEMO_EXECUTABLE) $(GALAXY_EXECUTABLE)
+	rm -f *.log digistar_config.json
+
+# Install (copy to system directory)
+install: $(MAIN_EXECUTABLE)
+	sudo cp $(MAIN_EXECUTABLE) /usr/local/bin/
+	sudo mkdir -p /usr/local/share/digistar
+	sudo cp -r examples/ /usr/local/share/digistar/
+	@echo "DigiStar installed to /usr/local/bin/"
+
+# Uninstall
+uninstall:
+	sudo rm -f /usr/local/bin/$(MAIN_EXECUTABLE)
+	sudo rm -rf /usr/local/share/digistar
+	@echo "DigiStar uninstalled"
+
+# Development setup
+dev-setup:
+	@echo "Setting up DigiStar development environment..."
+	@echo "Installing required packages..."
+	sudo apt-get update
+	sudo apt-get install -y build-essential cmake libgtest-dev libomp-dev
+	@echo "Building Google Test..."
+	cd /usr/src/gtest && sudo cmake . && sudo make && sudo cp *.a /usr/lib/
+	@echo "Development setup complete!"
+
+# Code formatting (requires clang-format)
+format:
+	find $(SRC_DIR) $(TEST_DIR) $(EXAMPLES_DIR) -name "*.cpp" -o -name "*.h" | xargs clang-format -i
+
+# Static analysis (requires cppcheck)
+analyze:
+	cppcheck --enable=all --inconclusive --std=c++17 $(SRC_DIR)/ $(TEST_DIR)/ $(EXAMPLES_DIR)/
+
+# Generate documentation (requires doxygen)
+docs:
+	doxygen Doxyfile
+
+# Memory check with valgrind
+memcheck: $(TEST_EXECUTABLE)
+	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./$(TEST_EXECUTABLE)
+
+# Performance profiling with perf
+profile: $(MAIN_EXECUTABLE)
+	perf record -g ./$(MAIN_EXECUTABLE) --benchmark --particles 50000 --benchmark-iterations 50
+	perf report
+
+# Create release package
+package: clean all
+	mkdir -p digistar-release
+	cp $(MAIN_EXECUTABLE) digistar-release/
+	cp -r examples/ digistar-release/
+	cp README.md digistar-release/ 2>/dev/null || echo "No README.md found"
+	cp LICENSE digistar-release/ 2>/dev/null || echo "No LICENSE found"
+	tar -czf digistar-release.tar.gz digistar-release/
+	rm -rf digistar-release/
+	@echo "Release package created: digistar-release.tar.gz"
+
+# Docker build (requires Dockerfile)
+docker-build:
+	docker build -t digistar:latest .
+
+# Run in Docker
+docker-run:
+	docker run -it --rm digistar:latest --help
+
+# Help target
+help:
+	@echo "DigiStar Integrated Simulation System - Build Targets"
+	@echo "===================================================="
+	@echo ""
+	@echo "Build Targets:"
+	@echo "  all              - Build main executable, examples, and tests"
+	@echo "  $(MAIN_EXECUTABLE)          - Build main DigiStar executable"
+	@echo "  examples         - Build all example programs"
+	@echo "  tests            - Build test suite"
+	@echo ""
+	@echo "Run Targets:"
+	@echo "  run-tests        - Run the test suite"
+	@echo "  run-demo         - Run the integrated demo (30 seconds)"
+	@echo "  run-galaxy       - Run galaxy formation example (60 seconds)"
+	@echo "  run-help         - Show DigiStar command-line help"
+	@echo "  run-minimal      - Run minimal simulation (10 seconds)"
+	@echo "  run-benchmark    - Run performance benchmark"
+	@echo ""
+	@echo "Development Targets:"
+	@echo "  dev-setup        - Install development dependencies"
+	@echo "  format           - Format code with clang-format"
+	@echo "  analyze          - Run static analysis with cppcheck"
+	@echo "  docs             - Generate documentation with doxygen"
+	@echo "  memcheck         - Run memory leak detection"
+	@echo "  profile          - Profile performance with perf"
+	@echo ""
+	@echo "Package Targets:"
+	@echo "  install          - Install to /usr/local/bin/"
+	@echo "  uninstall        - Remove from system"
+	@echo "  package          - Create release tar.gz"
+	@echo "  docker-build     - Build Docker image"
+	@echo "  docker-run       - Run in Docker container"
+	@echo ""
+	@echo "Utility Targets:"
+	@echo "  clean            - Remove build artifacts"
+	@echo "  help             - Show this help message"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make all                    # Build everything"
+	@echo "  make run-tests             # Build and run tests"
+	@echo "  make run-demo              # Build and run demo"
+	@echo "  make install               # Build and install"
+	@echo ""
+
+# Debug build with extra flags
+debug: CXXFLAGS += -DDEBUG -O0
+debug: all
+
+# Release build with optimizations
+release: CXXFLAGS += -DNDEBUG -O3 -march=native
+release: all
+
+# Quick test for CI/CD
+quick-test: $(MAIN_EXECUTABLE)
+	./$(MAIN_EXECUTABLE) --version
+	./$(MAIN_EXECUTABLE) --generate-config test_config.json
+	rm -f test_config.json
+	@echo "Quick test passed!"
+
+# Coverage build (requires gcov/lcov)
+coverage: CXXFLAGS += --coverage
+coverage: LIBS += --coverage
+coverage: $(TEST_EXECUTABLE)
+	./$(TEST_EXECUTABLE)
+	gcov $(LIB_SOURCES) $(TEST_SOURCES)
+	lcov --capture --directory . --output-file coverage.info
+	genhtml coverage.info --output-directory coverage_html
+	@echo "Coverage report generated in coverage_html/"
