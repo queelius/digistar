@@ -2,6 +2,28 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL RULES - READ BEFORE MAKING ANY CHANGES
+
+1. **ALWAYS CONSULT RELEVANT DESIGN DOCUMENTS FIRST**
+   - Before implementing ANY feature, check `docs/` for the relevant design document
+   - Examples: `SOFT_CONTACT_FORCES.md` for collisions, `COMPOSITE_BODIES_DESIGN.md` for composites, `EVENT_SYSTEM_DESIGN.md` for events, etc.
+   - The design docs are comprehensive and authoritative - follow them
+
+2. **NEVER CREATE NEW FILES WHEN ASKED TO MODIFY EXISTING ONES**
+   - If the user says "modify X", modify X. Do not create X_demo, X_new, X_enhanced, etc.
+   - This has caused significant testing problems
+
+3. **PHYSICS MUST FOLLOW ESTABLISHED PRINCIPLES**:
+   - Use FORCE-BASED soft contact (Hertzian model), NOT impulse-based
+   - Forces must be equal and opposite (Newton's third law)
+   - No global velocity damping (objects don't slow down in vacuum)
+   - Springs and contacts CAN have damping for stability
+   - Check the relevant physics design doc for the specific system being worked on
+
+4. **WHEN IN DOUBT, ASK**
+   - Better to clarify than make wrong assumptions that waste time
+   - If unsure which design doc applies, list the options and ask
+
 ## Project Overview
 
 Digital Star (digistar) is an ambitious sandbox space simulation game that simulates "big atoms" - fundamental units with complex physics properties that can scale from spaceships to multi-star systems. The project is currently in early design phase with extensive documentation but limited implementation.
@@ -117,11 +139,50 @@ g++ -std=c++17 -O2 solar_system_simple.cpp -o solar_system
 ./solar_system
 ```
 
+## CRITICAL DESIGN DECISIONS FROM DOCS (MUST FOLLOW)
+
+### SPATIAL_INDEXING_DESIGN.md
+- **SPARSE GRIDS ARE MANDATORY**: Dense grids need 6TB RAM for realistic worlds
+- Use `std::unordered_map<uint64_t, std::vector<uint32_t>>` NOT dense arrays
+- Only store occupied cells (~1M vs 250B empty cells)
+- Incremental updates critical - only ~1% particles change cells per frame
+- Multi-resolution hierarchy: collision (4 units), springs (20 units), thermal (100 units), radiation (500 units)
+
+### GRAVITY_AND_SPATIAL_TOPOLOGY.md
+- **Particle Mesh (PM) solver for gravity**: O(N log N) using FFT
+- Cloud-in-Cell (CIC) interpolation for mass deposition
+- Toroidal topology with periodic boundaries
+- NO Barnes-Hut trees - PM works better with toroidal space
+
+### SOFT_CONTACT_FORCES.md
+- **Hertzian contact model**: Force ∝ overlap^1.5
+- Contact damping for stability
+- NO impulse-based collisions
+- Forces must be equal and opposite
+
+### COMPOSITE_BODIES_DESIGN.md
+- Union-Find for dynamic clustering
+- Springs form/break based on distance and relative velocity
+- Composite properties computed from constituents
+- Sphere trees for better collision detection than single bounding sphere
+
+### EVENT_SYSTEM_ARCHITECTURE.md
+- Lock-free ring buffers for events
+- 64-byte cache-aligned events
+- Producer-consumer pattern with memory barriers
+- Target 10M+ events/second
+
+### GPU_CPU_OPTIMIZATION.md
+- Structure-of-Arrays (SoA) for SIMD
+- Pool-based allocation to avoid fragmentation
+- CPU handles up to 2M particles
+- GPU needed for 10M+ particles
+
 ## Important Notes
 
 - **Active Development**: Project has working code, not just design docs
 - **PM Focus**: Particle Mesh is the primary gravity algorithm, not Barnes-Hut
-- **Grid-based Spatial Indexing**: Multi-resolution grids, not octrees
+- **Sparse Spatial Indexing**: NEVER use dense grids - hash maps only
 - **GPU Focus**: All physics planned for CUDA GPU acceleration
 - **Scale Goal**: Target 10+ million big atoms simultaneously
 - **Experimental Physics**: Novel physics models (black holes, warp channels, etc.)
