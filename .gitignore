@@ -19,3 +19,23 @@ build/
 # System files
 .DS_Store
 Thumbs.db
+# Test executables and temporary files
+test_*
+*_test
+*_demo
+*_debug
+*.o
+*.a
+*.so
+
+# Build artifacts not in build/
+composite_viewer
+physics_viewer*
+minimal_viewer*
+
+# Temporary analysis files
+BENCHMARK_ANALYSIS.md
+SCALING_ANALYSIS.md
+SPARSE_GRID_RESULTS.md
+plot_*.py
+
