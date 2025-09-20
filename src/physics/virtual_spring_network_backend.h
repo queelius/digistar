@@ -17,6 +17,10 @@
 
 namespace digistar {
 
+// Forward declaration
+template<typename Particle>
+class SparseSpatialGrid;
+
 /**
  * Spring connection between two particles
  */
@@ -112,7 +116,7 @@ public:
      */
     virtual void updateVirtualSprings(
         std::vector<Particle>& particles,
-        class SparseSpatialGrid<Particle>& grid,
+        SparseSpatialGrid<Particle>& grid,
         float dt) = 0;
 
     /**
