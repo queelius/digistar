@@ -18,6 +18,7 @@
 #include <chrono>
 #include "gravity_backend.h"
 #include "collision_backend.h"
+#include "virtual_spring_network_backend.h"
 #include "sparse_spatial_grid.h"
 
 namespace digistar {
@@ -41,9 +42,11 @@ public:
      */
     ModularPhysicsBackend(
         std::unique_ptr<IGravityBackend<Particle>> gravity_backend = nullptr,
-        std::unique_ptr<ICollisionBackend<Particle>> collision_backend = nullptr)
+        std::unique_ptr<ICollisionBackend<Particle>> collision_backend = nullptr,
+        std::unique_ptr<IVirtualSpringNetworkBackend<Particle>> spring_backend = nullptr)
         : gravity_backend_(std::move(gravity_backend)),
-          collision_backend_(std::move(collision_backend)) {
+          collision_backend_(std::move(collision_backend)),
+          spring_backend_(std::move(spring_backend)) {
 
         // Initialize spatial grid for collisions
         typename SparseSpatialGrid<Particle>::Config grid_config;
@@ -103,9 +106,19 @@ public:
             stats_.collision_pairs = collision_stats.pairs_checked;
         }
 
-        // Springs (TODO: add spring backend)
-        stats_.spring_ms = 0;
-        stats_.active_springs = 0;
+        // Virtual springs (emergent bonding)
+        if (spring_backend_) {
+            t1 = std::chrono::high_resolution_clock::now();
+            spring_backend_->updateVirtualSprings(particles, *spatial_grid_, dt);
+            t2 = std::chrono::high_resolution_clock::now();
+            stats_.spring_ms = std::chrono::duration<double, std::milli>(t2 - t1).count();
+
+            auto spring_stats = spring_backend_->getStats();
+            stats_.active_springs = spring_stats.active_springs;
+        } else {
+            stats_.spring_ms = 0;
+            stats_.active_springs = 0;
+        }
 
         // Integration (Leapfrog)
         t1 = std::chrono::high_resolution_clock::now();
@@ -145,15 +158,28 @@ public:
     }
 
     /**
+     * Set virtual spring backend
+     */
+    void setSpringBackend(std::unique_ptr<IVirtualSpringNetworkBackend<Particle>> backend) {
+        spring_backend_ = std::move(backend);
+    }
+
+    /**
      * Get spatial grid for direct access
      */
     SparseSpatialGrid<Particle>& getSpatialGrid() { return *spatial_grid_; }
+
+    /**
+     * Get spring backend for access to springs and composites
+     */
+    IVirtualSpringNetworkBackend<Particle>* getSpringBackend() { return spring_backend_.get(); }
 
 private:
     // Backend components
     std::unique_ptr<IGravityBackend<Particle>> gravity_backend_;
     std::unique_ptr<ICollisionBackend<Particle>> collision_backend_;
-    // TODO: Add spring_backend_, thermal_backend_, etc.
+    std::unique_ptr<IVirtualSpringNetworkBackend<Particle>> spring_backend_;
+    // TODO: Add thermal_backend_, radiation_backend_, etc.
 
     // Spatial indexing
     std::unique_ptr<SparseSpatialGrid<Particle>> spatial_grid_;
