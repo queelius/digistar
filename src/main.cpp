@@ -19,9 +19,13 @@
 #include <string>
 #include <atomic>
 #include <SDL2/SDL.h>
-#include "physics/composite_system.h"
+// composite_system.h removed - using backend's composite system
 #include "physics/pm_solver.h"
 #include "physics/sparse_spatial_grid.h"
+#include "physics/modular_physics_backend.h"
+#include "physics/pm_gravity_backend.h"
+#include "physics/cpu_collision_backend.h"
+#include "physics/cpu_virtual_spring_backend.h"
 
 using namespace digistar;
 
@@ -40,15 +44,8 @@ struct Particle {
     bool selected;
 };
 
-struct Spring {
-    uint32_t p1, p2;
-    float rest_length;
-    float stiffness;
-    float damping;
-    float max_extension;
-    uint32_t color;
-    bool active;
-};
+// Spring struct now comes from virtual_spring_network_backend.h
+using Spring = digistar::Spring;
 
 struct Camera {
     float x = 0, y = 0;
@@ -66,7 +63,8 @@ private:
     // Physics systems
     std::unique_ptr<PMSolver> pm_solver;
     std::unique_ptr<SparseMultiResolutionGrid<Particle>> spatial_grid;
-    CompositeManager* composite_manager = nullptr;
+    std::unique_ptr<ModularPhysicsBackend<Particle>> physics_backend;
+    // CompositeManager now handled by spring backend
 
     // Simulation parameters
     const float WORLD_SIZE = 10000.0f;
@@ -81,6 +79,8 @@ private:
         float spatial_grid_time = 0;
         float collision_time = 0;
         int particles_rendered = 0;
+        size_t spring_count = 0;
+        size_t composite_count = 0;
         PMSolver::GridStats pm_stats;
         SparseMultiResolutionGrid<Particle>::MultiGridStats grid_stats;
     } stats;
@@ -158,14 +158,49 @@ public:
         grid_config.radiation_cell_size = 512.0f;
         spatial_grid = std::make_unique<SparseMultiResolutionGrid<Particle>>(grid_config);
 
+        // Initialize modular physics backend with all components
+        // Gravity backend
+        typename IGravityBackend<Particle>::Config gravity_config;
+        gravity_config.G = 50.0f;
+        gravity_config.grid_size = 256;
+        gravity_config.box_size = WORLD_SIZE;
+        gravity_config.softening = 5.0f;
+        auto gravity_backend = std::make_unique<PMGravityBackend<Particle>>(gravity_config);
+
+        // Collision backend
+        typename ICollisionBackend<Particle>::Config collision_config;
+        collision_config.contact_radius = 4.0f;
+        collision_config.spring_stiffness = 500.0f;
+        collision_config.damping_coefficient = 0.2f;
+        collision_config.num_threads = 0;  // Auto-detect
+        auto collision_backend = std::make_unique<CpuCollisionBackend<Particle>>(collision_config);
+
+        // Virtual spring backend
+        typename IVirtualSpringNetworkBackend<Particle>::Config spring_config;
+        spring_config.formation_distance = 3.0f;
+        spring_config.formation_velocity = 2.0f;
+        spring_config.spring_stiffness = 100.0f;
+        spring_config.spring_damping = 0.5f;
+        spring_config.max_stretch = 2.0f;
+        spring_config.max_force = 500.0f;
+        spring_config.track_composites = true;
+        spring_config.min_composite_size = 5;
+        spring_config.max_springs_per_particle = 12;
+        spring_config.max_total_springs = 100000;
+        auto spring_backend = std::make_unique<CpuVirtualSpringBackend<Particle>>(spring_config);
+
+        // Create modular backend
+        physics_backend = std::make_unique<ModularPhysicsBackend<Particle>>(
+            std::move(gravity_backend),
+            std::move(collision_backend),
+            std::move(spring_backend)
+        );
+
         return true;
     }
 
     void cleanup() {
-        if (composite_manager) {
-            delete composite_manager;
-            composite_manager = nullptr;
-        }
+        // CompositeManager cleanup handled by spring backend
 
         if (renderer) {
             SDL_DestroyRenderer(renderer);
@@ -324,9 +359,7 @@ public:
             particles.push_back(p);
         }
 
-        // Initialize composite manager
-        if (composite_manager) delete composite_manager;
-        composite_manager = new CompositeManager(particles.size());
+        // CompositeManager now handled by spring backend
 
         std::cout << "Created star system with " << particles.size() << " particles:\n";
         std::cout << "  - Central star: " << star_particles << " particles\n";
@@ -334,71 +367,102 @@ public:
         std::cout << "  - Asteroid belt: " << asteroid_count << " particles\n";
     }
 
-    // Physics update using PM solver and spatial grids
+    // Physics update using modular backend
     void updatePhysics(std::vector<Particle>& particles, std::vector<Spring>& springs) {
         if (input.pause_physics) return;
 
         auto t_start = std::chrono::high_resolution_clock::now();
 
-        for (int substep = 0; substep < SUBSTEPS; substep++) {
-            // Clear accelerations
-            for (auto& p : particles) {
-                p.ax = 0;
-                p.ay = 0;
-                p.fx = 0;
-                p.fy = 0;
+        // Use modular backend if available
+        if (physics_backend) {
+            for (int substep = 0; substep < SUBSTEPS; substep++) {
+                float sub_dt = dt / SUBSTEPS;
+                physics_backend->step(particles, sub_dt);
             }
 
-            // Step 1: Compute gravity using PM solver
-            auto t_pm_start = std::chrono::high_resolution_clock::now();
-            pm_solver->computeForces(particles);
-            auto t_pm_end = std::chrono::high_resolution_clock::now();
-            stats.pm_solver_time = std::chrono::duration<float, std::milli>(t_pm_end - t_pm_start).count();
+            // Get stats from backend
+            auto backend_stats = physics_backend->getStats();
+            stats.physics_time = backend_stats.total_ms;
+            stats.pm_solver_time = backend_stats.gravity_ms;
+            stats.spatial_grid_time = backend_stats.grid_update_ms;
+            stats.collision_time = backend_stats.collision_ms;
 
-            // Step 2: Update spatial grids (uses incremental update - ~1% particles change cells)
-            auto t_grid_start = std::chrono::high_resolution_clock::now();
-            spatial_grid->update(particles, true);  // incremental = true
-            auto t_grid_end = std::chrono::high_resolution_clock::now();
-            stats.spatial_grid_time = std::chrono::duration<float, std::milli>(t_grid_end - t_grid_start).count();
+            // Get spring stats if available
+            if (auto* spring_backend = physics_backend->getSpringBackend()) {
+                auto spring_stats = spring_backend->getStats();
+                stats.spring_count = spring_stats.active_springs;
+                stats.composite_count = spring_stats.num_composites;
 
-            // Step 3: Compute collisions using contact grid
-            auto t_collision_start = std::chrono::high_resolution_clock::now();
-            computeCollisions(particles);
-            auto t_collision_end = std::chrono::high_resolution_clock::now();
-            stats.collision_time = std::chrono::duration<float, std::milli>(t_collision_end - t_collision_start).count();
+                // Update springs vector for visualization
+                const auto& backend_springs = spring_backend->getSprings();
+                springs.clear();
+                for (const auto& s : backend_springs) {
+                    if (s.active) {
+                        Spring spring;
+                        spring.p1 = s.p1;
+                        spring.p2 = s.p2;
+                        spring.active = true;
+                        springs.push_back(spring);
+                    }
+                }
+            }
+        } else {
+            // Fallback to old physics (for compatibility)
+            for (int substep = 0; substep < SUBSTEPS; substep++) {
+                // Clear accelerations
+                for (auto& p : particles) {
+                    p.ax = 0;
+                    p.ay = 0;
+                    p.fx = 0;
+                    p.fy = 0;
+                }
 
-            // Step 4: Spring forces (if enabled)
-            if (!springs.empty()) {
-                computeSpringForces(particles, springs);
+                // Step 1: Compute gravity using PM solver
+                auto t_pm_start = std::chrono::high_resolution_clock::now();
+                pm_solver->computeForces(particles);
+                auto t_pm_end = std::chrono::high_resolution_clock::now();
+                stats.pm_solver_time = std::chrono::duration<float, std::milli>(t_pm_end - t_pm_start).count();
+
+                // Step 2: Update spatial grids
+                auto t_grid_start = std::chrono::high_resolution_clock::now();
+                spatial_grid->update(particles, true);
+                auto t_grid_end = std::chrono::high_resolution_clock::now();
+                stats.spatial_grid_time = std::chrono::duration<float, std::milli>(t_grid_end - t_grid_start).count();
+
+                // Step 3: Compute collisions
+                auto t_collision_start = std::chrono::high_resolution_clock::now();
+                computeCollisions(particles);
+                auto t_collision_end = std::chrono::high_resolution_clock::now();
+                stats.collision_time = std::chrono::duration<float, std::milli>(t_collision_end - t_collision_start).count();
+
+                // Step 4: Spring forces
+                if (!springs.empty()) {
+                    computeSpringForces(particles, springs);
+                }
+
+                // Step 5: Integrate positions
+                float sub_dt = dt / SUBSTEPS;
+                for (auto& p : particles) {
+                    if (p.pinned) continue;
+
+                    float total_ax = p.ax + p.fx / p.mass;
+                    float total_ay = p.ay + p.fy / p.mass;
+
+                    p.vx += total_ax * sub_dt;
+                    p.vy += total_ay * sub_dt;
+                    p.x += p.vx * sub_dt;
+                    p.y += p.vy * sub_dt;
+
+                    wrapPosition(p);
+                }
             }
 
-            // Step 5: Integrate positions
-            float sub_dt = dt / SUBSTEPS;
-            for (auto& p : particles) {
-                if (p.pinned) continue;
+            stats.pm_stats = pm_solver->getStats();
+            stats.grid_stats = spatial_grid->getStats();
 
-                // Total acceleration from gravity (ax, ay) and local forces (fx, fy)
-                float total_ax = p.ax + p.fx / p.mass;
-                float total_ay = p.ay + p.fy / p.mass;
-
-                // Velocity Verlet integration
-                p.vx += total_ax * sub_dt;
-                p.vy += total_ay * sub_dt;
-
-                p.x += p.vx * sub_dt;
-                p.y += p.vy * sub_dt;
-
-                // Toroidal wrapping
-                wrapPosition(p);
-            }
+            auto t_end = std::chrono::high_resolution_clock::now();
+            stats.physics_time = std::chrono::duration<float, std::milli>(t_end - t_start).count();
         }
-
-        // Update statistics
-        stats.pm_stats = pm_solver->getStats();
-        stats.grid_stats = spatial_grid->getStats();
-
-        auto t_end = std::chrono::high_resolution_clock::now();
-        stats.physics_time = std::chrono::duration<float, std::milli>(t_end - t_start).count();
     }
 
     // Compute collisions using spatial grid
@@ -479,14 +543,15 @@ public:
 
             float extension = dist - spring.rest_length;
 
-            // Check breaking condition
-            if (std::abs(extension) > spring.max_extension) {
+            // Spring force
+            float force = spring.stiffness * extension;
+
+            // Check breaking condition using max_force
+            if (std::abs(extension) > spring.rest_length * 2.0f ||
+                std::abs(force) > spring.max_force) {
                 spring.active = false;
                 continue;
             }
-
-            // Spring force
-            float force = spring.stiffness * extension;
 
             // Damping
             float vrel_x = p2.vx - p1.vx;
