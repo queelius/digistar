@@ -17,37 +17,24 @@
 #include <chrono>
 #include <cmath>
 #include <omp.h>
+#include "collision_backend.h"
 #include "sparse_spatial_grid.h"
 
 namespace digistar {
-
-/**
- * Collision detection statistics
- */
-struct CollisionStats {
-    size_t pairs_checked = 0;
-    size_t collisions_found = 0;
-    double computation_time_ms = 0;
-    double efficiency = 0;  // collisions_found / pairs_checked
-};
 
 /**
  * CPU-optimized collision detection backend
  * Uses OpenMP to parallelize collision detection across spatial grid cells
  */
 template<typename Particle>
-class CpuCollisionBackend {
+class CpuCollisionBackend : public ICollisionBackend<Particle> {
 public:
-    struct Config {
-        float contact_radius = 4.0f;       // Detection radius (typically 2-4x particle radius)
-        float spring_stiffness = 500.0f;   // Hertzian contact stiffness
-        float damping_coefficient = 0.2f;  // Velocity damping
-        int num_threads = 0;               // 0 = auto-detect
-    };
+    using typename ICollisionBackend<Particle>::Config;
 
-    CpuCollisionBackend(const Config& config = Config()) : config_(config) {
-        if (config_.num_threads <= 0) {
-            config_.num_threads = omp_get_max_threads();
+    CpuCollisionBackend(const Config& config = Config()) {
+        this->config_ = config;
+        if (this->config_.num_threads <= 0) {
+            this->config_.num_threads = omp_get_max_threads();
         }
     }
 
@@ -63,14 +50,14 @@ public:
     void computeCollisions(
         std::vector<Particle>& particles,
         SparseSpatialGrid<Particle>& grid,
-        float dt) {
+        float dt) override {
 
         auto start = startTimer();
-        stats_.pairs_checked = 0;
-        stats_.collisions_found = 0;
+        this->stats_.pairs_checked = 0;
+        this->stats_.collisions_found = 0;
 
-        int cell_radius = std::ceil(config_.contact_radius / grid.config.cell_size);
-        float radius2 = config_.contact_radius * config_.contact_radius;
+        int cell_radius = std::ceil(this->config_.contact_radius / grid.config.cell_size);
+        float radius2 = this->config_.contact_radius * this->config_.contact_radius;
 
         // Convert hash map to vector for OpenMP iteration
         std::vector<std::pair<uint64_t, std::vector<uint32_t>>> cell_list;
@@ -80,7 +67,7 @@ public:
         }
 
         // Process cells in parallel
-        #pragma omp parallel for schedule(dynamic, 64) num_threads(config_.num_threads)
+        #pragma omp parallel for schedule(dynamic, 64) num_threads(this->config_.num_threads)
         for (size_t cell_idx = 0; cell_idx < cell_list.size(); cell_idx++) {
             const auto& [center_key, center_particles] = cell_list[cell_idx];
 
@@ -139,29 +126,17 @@ public:
 
         endTimer(start);
 
-        if (stats_.pairs_checked > 0) {
-            stats_.efficiency = double(stats_.collisions_found) / double(stats_.pairs_checked);
+        if (this->stats_.pairs_checked > 0) {
+            this->stats_.efficiency = double(this->stats_.collisions_found) / double(this->stats_.pairs_checked);
         }
     }
 
     /**
-     * Get last computation statistics
-     */
-    CollisionStats getStats() const { return stats_; }
-
-    /**
      * Get backend name
      */
-    std::string getName() const { return "CpuCollisionBackend"; }
-
-    /**
-     * Get configuration
-     */
-    const Config& getConfig() const { return config_; }
+    std::string getName() const override { return "CpuCollisionBackend"; }
 
 private:
-    Config config_;
-    mutable CollisionStats stats_;
 
     /**
      * Process particle pair within same cell
@@ -182,12 +157,12 @@ private:
     inline void processParticlePairDist(Particle& p1, Particle& p2,
                                         float dx, float dy, float dist2) {
         #pragma omp atomic
-        stats_.pairs_checked++;
+        this->stats_.pairs_checked++;
 
         float min_dist = p1.radius + p2.radius;
         if (dist2 < min_dist * min_dist && dist2 > 0.001f) {
             #pragma omp atomic
-            stats_.collisions_found++;
+            this->stats_.collisions_found++;
 
             float dist = std::sqrt(dist2);
             float overlap = min_dist - dist;
@@ -203,7 +178,7 @@ private:
             float vrel_normal = vrel_x * dx + vrel_y * dy;
 
             // Add damping
-            force -= config_.damping_coefficient * vrel_normal * std::sqrt(overlap);
+            force -= this->config_.damping_coefficient * vrel_normal * std::sqrt(overlap);
 
             // Apply forces (race condition exists here - acceptable for now)
             float fx = force * dx;
@@ -220,7 +195,7 @@ private:
      * Calculate Hertzian contact force
      */
     inline float calculateContactForce(float overlap) const {
-        return config_.spring_stiffness * std::pow(overlap, 1.5f);
+        return this->config_.spring_stiffness * std::pow(overlap, 1.5f);
     }
 
     /**
@@ -235,7 +210,7 @@ private:
      */
     inline void endTimer(const std::chrono::high_resolution_clock::time_point& start_time) const {
         auto end_time = std::chrono::high_resolution_clock::now();
-        stats_.computation_time_ms = std::chrono::duration<double, std::milli>(
+        this->stats_.computation_time_ms = std::chrono::duration<double, std::milli>(
             end_time - start_time).count();
     }
 };

@@ -16,57 +16,43 @@
 #include <vector>
 #include <memory>
 #include <chrono>
+#include "gravity_backend.h"
 #include "pm_solver.h"
 
 namespace digistar {
 
-/**
- * PM gravity computation statistics
- */
-struct GravityStats {
-    double deposit_time_ms = 0;
-    double fft_time_ms = 0;
-    double interpolate_time_ms = 0;
-    double total_time_ms = 0;
-    size_t grid_cells = 0;
-    size_t num_particles = 0;
-};
 
 /**
  * PM-based gravity backend for long-range forces
  */
 template<typename Particle>
-class PMGravityBackend {
+class PMGravityBackend : public IGravityBackend<Particle> {
 public:
-    struct Config {
-        int grid_size = 256;        // Grid resolution (NxN)
-        float box_size = 10000.0f;  // World size
-        float G = 50.0f;            // Gravitational constant
-        float softening = 5.0f;     // Force softening length
-    };
+    using typename IGravityBackend<Particle>::Config;
 
-    PMGravityBackend(const Config& config = Config()) : config_(config) {
+    PMGravityBackend(const Config& config = Config()) {
+        this->config_ = config;
         // Create PM solver configuration
         PMSolver::Config pm_config;
-        pm_config.grid_size = config_.grid_size;
-        pm_config.box_size = config_.box_size;
-        pm_config.G = config_.G;
-        pm_config.softening = config_.softening;
+        pm_config.grid_size = this->config_.grid_size;
+        pm_config.box_size = this->config_.box_size;
+        pm_config.G = this->config_.G;
+        pm_config.softening = this->config_.softening;
 
         // Initialize PM solver
         pm_solver_ = std::make_unique<PMSolver>(pm_config);
         pm_solver_->initialize();
 
-        stats_.grid_cells = config_.grid_size * config_.grid_size;
+        this->stats_.num_particles = 0;
     }
 
     /**
      * Compute gravitational forces for all particles
      * Updates particle ax, ay fields with gravitational accelerations
      */
-    void computeGravity(std::vector<Particle>& particles, float dt) {
+    void computeGravity(std::vector<Particle>& particles, float dt) override {
         auto start = startTimer();
-        stats_.num_particles = particles.size();
+        this->stats_.num_particles = particles.size();
 
         // Clear accelerations
         for (auto& p : particles) {
@@ -81,27 +67,17 @@ public:
 
         // For now, we don't have detailed timing from PM solver
         // TODO: Add timing to PM solver
-        stats_.deposit_time_ms = 0;
-        stats_.fft_time_ms = 0;
-        stats_.interpolate_time_ms = 0;
+        this->stats_.deposit_time_ms = 0;
+        this->stats_.fft_time_ms = 0;
+        this->stats_.interpolate_time_ms = 0;
 
         endTimer(start);
     }
 
     /**
-     * Get last computation statistics
-     */
-    GravityStats getStats() const { return stats_; }
-
-    /**
      * Get backend name
      */
-    std::string getName() const { return "PMGravityBackend"; }
-
-    /**
-     * Get configuration
-     */
-    const Config& getConfig() const { return config_; }
+    std::string getName() const override { return "PMGravityBackend"; }
 
     /**
      * Get PM solver grid statistics
@@ -111,9 +87,7 @@ public:
     }
 
 private:
-    Config config_;
     std::unique_ptr<PMSolver> pm_solver_;
-    mutable GravityStats stats_;
 
     /**
      * Start timing
@@ -127,7 +101,7 @@ private:
      */
     inline void endTimer(const std::chrono::high_resolution_clock::time_point& start_time) const {
         auto end_time = std::chrono::high_resolution_clock::now();
-        stats_.total_time_ms = std::chrono::duration<double, std::milli>(
+        this->stats_.total_time_ms = std::chrono::duration<double, std::milli>(
             end_time - start_time).count();
     }
 };

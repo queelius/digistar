@@ -16,8 +16,8 @@
 #include <memory>
 #include <vector>
 #include <chrono>
-#include "pm_gravity_backend.h"
-#include "cpu_collision_backend.h"
+#include "gravity_backend.h"
+#include "collision_backend.h"
 #include "sparse_spatial_grid.h"
 
 namespace digistar {
@@ -40,8 +40,8 @@ public:
      * Constructor with individual backend components
      */
     ModularPhysicsBackend(
-        std::unique_ptr<PMGravityBackend<Particle>> gravity_backend = nullptr,
-        std::unique_ptr<CpuCollisionBackend<Particle>> collision_backend = nullptr)
+        std::unique_ptr<IGravityBackend<Particle>> gravity_backend = nullptr,
+        std::unique_ptr<ICollisionBackend<Particle>> collision_backend = nullptr)
         : gravity_backend_(std::move(gravity_backend)),
           collision_backend_(std::move(collision_backend)) {
 
@@ -133,14 +133,14 @@ public:
     /**
      * Set gravity backend
      */
-    void setGravityBackend(std::unique_ptr<PMGravityBackend<Particle>> backend) {
+    void setGravityBackend(std::unique_ptr<IGravityBackend<Particle>> backend) {
         gravity_backend_ = std::move(backend);
     }
 
     /**
      * Set collision backend
      */
-    void setCollisionBackend(std::unique_ptr<CpuCollisionBackend<Particle>> backend) {
+    void setCollisionBackend(std::unique_ptr<ICollisionBackend<Particle>> backend) {
         collision_backend_ = std::move(backend);
     }
 
@@ -151,8 +151,8 @@ public:
 
 private:
     // Backend components
-    std::unique_ptr<PMGravityBackend<Particle>> gravity_backend_;
-    std::unique_ptr<CpuCollisionBackend<Particle>> collision_backend_;
+    std::unique_ptr<IGravityBackend<Particle>> gravity_backend_;
+    std::unique_ptr<ICollisionBackend<Particle>> collision_backend_;
     // TODO: Add spring_backend_, thermal_backend_, etc.
 
     // Spatial indexing

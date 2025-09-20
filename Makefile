@@ -7,8 +7,7 @@ LDFLAGS = -lSDL2 -lfftw3f -lm -lgomp
 
 # Source files
 SRCS = src/main.cpp \
-       src/physics/pm_solver.cpp \
-       src/physics/collision_backend.cpp
+       src/physics/pm_solver.cpp
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)
